@@ -1,0 +1,86 @@
+services:
+  app:
+    build: .
+    container_name: messenger_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html:cached
+      - messenger_php_socket:/var/run/php
+    networks:
+      - messenger_network
+    ports:
+      - "8080:8080"
+    environment:
+      - PHP_IDE_CONFIG=serverName=Docker
+
+  nginx:
+    image: nginx:alpine
+    container_name: messenger_nginx
+    restart: unless-stopped
+    ports:
+      - "8001:80"
+    volumes:
+      - ./backend:/var/www/html
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - messenger_php_socket:/var/run/php
+    networks:
+      - messenger_network
+    depends_on:
+      - app
+
+  mysql:
+    image: mysql:8.0
+    container_name: messenger_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: messenger_db
+      MYSQL_ROOT_PASSWORD: secret_messenger
+    volumes:
+      - messenger_mysql_data:/var/lib/mysql
+    networks:
+      - messenger_network
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: messenger_phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: secret_messenger
+    networks:
+      - messenger_network
+    depends_on:
+      - mysql
+
+  node:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.node
+    container_name: messenger_node
+    working_dir: /app
+    volumes:
+      - ./frontend:/app:cached
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    networks:
+      - messenger_network
+    environment:
+      - VITE_API_URL=http://localhost:8001/api
+      - VITE_REVERB_APP_KEY=40oo3peonfatannwbqku
+      - VITE_REVERB_HOST=localhost
+      - VITE_REVERB_PORT=8080
+      - VITE_REVERB_SCHEME=http
+    command: npm run dev -- --host 0.0.0.0
+
+volumes:
+  messenger_mysql_data:
+  messenger_php_socket:
+
+networks:
+  messenger_network:
+    driver: bridge
