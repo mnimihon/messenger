@@ -11,12 +11,11 @@ window.Echo = new Echo({
     wssPort: import.meta.env.VITE_REVERB_PORT,
     forceTLS: false,
     enabledTransports: ['ws', 'wss'],
-    authEndpoint: import.meta.env.VITE_API_BASE_URL + '/broadcasting/auth',
+    authEndpoint: import.meta.env.VITE_API_URL + '/broadcasting/auth',
     auth: {
         headers: {
             Authorization: 'Bearer ' + localStorage.getItem('access_token'),
             'Accept': 'application/json',
-            'Content-Type': 'application/json',
         },
     },
     authTransport: 'ajax',

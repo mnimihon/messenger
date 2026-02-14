@@ -46,4 +46,18 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function conversations()
+    {
+        return $this->hasMany(Conversation::class, 'user1_id')
+            ->orWhere('user2_id', $this->id);
+    }
+
+    public function hasAccessToConversation($conversationId): bool
+    {
+        return $this->conversations()
+            ->where('id', $conversationId)
+            ->exists();
+    }
+
 }

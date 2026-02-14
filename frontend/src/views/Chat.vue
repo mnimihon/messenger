@@ -292,6 +292,13 @@ const handleResize = () => {
 let echoChannel = null
 // Lifecycle
 onMounted(async () => {
+
+
+  window.Echo.private('conversation.7')
+      .listen('.message.sent', (event) => {
+        console.log('Новое сообщение:', event.message)
+      })
+
   // Сначала ждем загрузки пользователя
   if (!authStore.user) {
     await authStore.fetchCurrentUser()
@@ -320,7 +327,7 @@ async function initWebSockets() {
     }
 
     // Подключаемся к приватному каналу пользователя
-    window.Echo.private(`user.${currentUser.value.id}`)
+    window.Echo.channel(`user.${currentUser.value.id}`)
         .listen('.conversation.updated', (e) => {
           // Обновляем список диалогов
           chatStore.loadConversations()

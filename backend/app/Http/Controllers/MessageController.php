@@ -7,6 +7,7 @@ use App\Models\Conversation;
 use App\Models\Message;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class MessageController extends Controller
 {
@@ -67,7 +68,7 @@ class MessageController extends Controller
 
         $message->load('sender:id,name,avatar_url');
 
-        broadcast(new MessageSent($message))->toOthers();
+        event(new MessageSent($message));
 
         return response()->json([
             'message' => [
