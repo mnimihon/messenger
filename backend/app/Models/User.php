@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -23,6 +24,14 @@ class User extends Authenticatable
         'email',
         'password',
         'avatar_url',
+        'verification_code',
+        'verification_code_expires_at',
+        'reset_password_code_expires_at',
+        'reset_password_code_sent_at',
+        'reset_password_attempts',
+        'reset_password_locked_until',
+        'login_attempts',
+        'login_locked_until',
     ];
 
     /**
@@ -43,6 +52,11 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'verification_code_expires_at' => 'datetime',
+            'reset_password_code_expires_at' => 'datetime',
+            'reset_password_code_sent_at' => 'datetime',
+            'reset_password_locked_until' => 'datetime',
+            'login_locked_until' => 'datetime',
             'password' => 'hashed',
         ];
     }

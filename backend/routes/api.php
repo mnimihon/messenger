@@ -4,10 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\MessageController;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
-use Laravel\Sanctum\PersonalAccessToken;
-use Illuminate\Support\Facades\Log;
 
 
 Route::post('/broadcasting/auth', function (\Illuminate\Http\Request $request) {
@@ -16,6 +13,11 @@ Route::post('/broadcasting/auth', function (\Illuminate\Http\Request $request) {
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
+
+Route::post('/resend-code', [AuthController::class, 'resendCode']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);

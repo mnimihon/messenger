@@ -1,13 +1,3 @@
-блять ды все стало только хуже
-
-и вот смотри судя по этому комменту /* Остальные стили оставь как были */ явно же что там были стили которые были нужны и которые нет в твоем файле
-
-
-
-
-вот изначальный Chat.vue. сделай так чтобы туда выдавались и от туда отправлялись данные по нашему API
-
-
 <template>
   <div class="chat-app" :class="{ 'dialog-open': isMobile && isDialogOpen }">
     <!-- Боковая панель с диалогами (видна всегда на десктопе, скрывается на мобиле при открытом диалоге) -->
@@ -293,16 +283,15 @@ let echoChannel = null
 // Lifecycle
 onMounted(async () => {
 
-
-  window.Echo.private('conversation.7')
-      .listen('.message.sent', (event) => {
-        console.log('Новое сообщение:', event.message)
-      })
-
   // Сначала ждем загрузки пользователя
   if (!authStore.user) {
     await authStore.fetchCurrentUser()
   }
+console.log('User access_token:', localStorage.getItem('access_token'))
+  window.Echo.private('conversation.7')
+      .listen('.message.sent', (event) => {
+        console.log('Новое сообщение:', event.message)
+      })
 
   console.log('User loaded:', authStore.user?.id) // Проверь
 
