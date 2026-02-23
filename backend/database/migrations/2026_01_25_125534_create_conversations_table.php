@@ -12,14 +12,16 @@ return new class extends Migration
     public function up() {
         Schema::create('conversations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user1_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('user2_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('user1_id')->constrained('users');
+            $table->foreignId('user2_id')->constrained('users');
             $table->dateTime('created_at')->useCurrent();
             $table->dateTime('updated_at')->useCurrent()->useCurrentOnUpdate();
+            $table->softDeletes();
 
             $table->unique(['user1_id', 'user2_id']);
             $table->index(['user2_id', 'user1_id']);
             $table->index('updated_at');
+            $table->index('deleted_at');
         });
     }
 

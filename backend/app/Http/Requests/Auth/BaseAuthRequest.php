@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Auth;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-abstract class BaseFormRequest extends FormRequest
+abstract class BaseAuthRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -27,17 +27,6 @@ abstract class BaseFormRequest extends FormRequest
             'string' => 'Поле :attribute должно быть строкой',
             'exists' => 'Выбранный :attribute не найден',
             'size' => 'Поле :attribute должно содержать :size символов',
-        ];
-    }
-
-    public function attributes(): array
-    {
-        return [
-            'name' => 'имя',
-            'email' => 'email',
-            'password' => 'пароль',
-            'code' => 'код подтверждения',
-            'token' => 'токен',
         ];
     }
 

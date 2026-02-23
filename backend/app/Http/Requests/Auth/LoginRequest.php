@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Auth;
 
-class LoginRequest extends BaseFormRequest
+class LoginRequest extends BaseAuthRequest
 {
     public function rules(): array
     {

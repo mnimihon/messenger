@@ -2,32 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\BaseFormRequest;
-use App\Http\Requests\ForgotPasswordRequest;
-use App\Http\Requests\LoginRequest;
-use App\Http\Requests\RegisterRequest;
-use App\Http\Requests\ResendCodeRequest;
-use App\Http\Requests\ResetPasswordRequest;
-use App\Http\Requests\VerifyEmailRequest;
+use App\Http\Requests\Auth\ForgotPasswordRequest;
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\ResendCodeRequest;
+use App\Http\Requests\Auth\ResetPasswordRequest;
+use App\Http\Requests\Auth\VerifyEmailRequest;
 use App\Models\User;
 use App\Notifications\EmailVerificationCodeNotification;
 use App\Notifications\ResetPasswordNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
-use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
     public function register(RegisterRequest $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
-
         $verificationCode = $this->generateVerificationCode();
         $user = User::create([
             'name' => $request->name,
@@ -49,11 +40,6 @@ class AuthController extends Controller
 
     public function verifyEmail(VerifyEmailRequest $request)
     {
-        $request->validate([
-            'email' => 'required|email|exists:users,email',
-            'code' => 'required|string|size:6'
-        ]);
-
         $user = User::where('email', $request->email)->first();
 
         if ($user->hasVerifiedEmail()) {
@@ -93,10 +79,6 @@ class AuthController extends Controller
 
     public function resendCode(ResendCodeRequest $request)
     {
-        $request->validate([
-            'email' => 'required|email|exists:users,email'
-        ]);
-
         $user = User::where('email', $request->email)->first();
 
         if ($user->hasVerifiedEmail()) {
@@ -107,10 +89,11 @@ class AuthController extends Controller
         }
 
         if ($user->verification_code_expires_at &&
-            $user->verification_code_expires_at->diffInMinutes(now()) < 1) {
+            round($user->verification_code_expires_at->diffInMinutes(now())) < 1) {
             return response()->json([
                 'success' => false,
-                'message' => 'Код уже был отправлен. Попробуйте через минуту.'
+                'message' => 'Код уже был отправлен. Попробуйте через минуту.',
+                'ddd' => $user->verification_code_expires_at->diffInMinutes(now()),
             ], 429);
         }
 
@@ -129,15 +112,10 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|string',
-        ]);
-
         $user = User::where('email', $request->email)->first();
         if ($user) {
             if ($user->login_locked_until && $user->login_locked_until > now()) {
-                $minutesLeft = round(now()->diffInMinutes($user->login_locked_until));
+                $minutesLeft = round($user->login_locked_until->diffInMinutes(now()));
                 return response()->json([
                     'success' => false,
                     'message' => "Слишком много неудачных попыток входа. Попробуйте через {$minutesLeft} минут.",
@@ -186,6 +164,9 @@ class AuthController extends Controller
             ], 403);
         }
 
+        $user->login_attempts = 0;
+        $user->save();
+
         $user->tokens()->delete();
         $token = $user->createToken('auth_token', ['*'], now()->addDays(30));
 
@@ -205,10 +186,6 @@ class AuthController extends Controller
 
     public function forgotPassword(ForgotPasswordRequest  $request)
     {
-        $request->validate([
-            'email' => 'required|email|exists:users,email'
-        ]);
-
         $user = User::where('email', $request->email)->first();
 
         if ($user->reset_password_code_sent_at &&
@@ -221,7 +198,7 @@ class AuthController extends Controller
         }
 
         if ($user->reset_password_locked_until && $user->reset_password_locked_until > now()) {
-            $minutesLeft = round(now()->diffInMinutes($user->reset_password_locked_until));
+            $minutesLeft = round($user->reset_password_locked_until->diffInMinutes(now()));
             return response()->json([
                 'success' => false,
                 'message' => "Слишком много неудачных попыток. Попробуйте через {$minutesLeft} минут.",
@@ -250,16 +227,10 @@ class AuthController extends Controller
 
     public function resetPassword(ResetPasswordRequest $request)
     {
-        $request->validate([
-            'email' => 'required|email|exists:users,email',
-            'code' => 'required|string|size:6',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
-
         $user = User::where('email', $request->email)->first();
 
         if ($user->reset_password_locked_until && $user->reset_password_locked_until > now()) {
-            $minutesLeft = round(now()->diffInMinutes($user->reset_password_locked_until));
+            $minutesLeft = round($user->reset_password_locked_until->diffInMinutes(now()));
             return response()->json([
                 'success' => false,
                 'message' => "Слишком много неудачных попыток. Попробуйте через {$minutesLeft} минут.",

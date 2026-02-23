@@ -3,24 +3,24 @@
 namespace App\Http\Controllers;
 
 use App\Events\MessageSent;
+use App\Http\Requests\Message\IndexMessageRequest;
+use App\Http\Requests\Message\MarkAsReadRequest;
+use App\Http\Requests\Message\StoreMessageRequest;
 use App\Models\Conversation;
 use App\Models\Message;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 class MessageController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexMessageRequest $request)
     {
-        $request->validate([
-            'conversation_id' => 'required|exists:conversations,id'
-        ]);
-
         $user = Auth::user();
         $conversation = Conversation::findOrFail($request->conversation_id);
         if (!in_array($user->id, [$conversation->user1_id, $conversation->user2_id])) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            return response()->json([
+                'success' => false,
+                'message' => 'У вас нет доступа к этому диалогу'
+            ], 403);
         }
 
         Message::where('conversation_id', $conversation->id)
@@ -31,30 +31,24 @@ class MessageController extends Controller
         $messages = Message::where('conversation_id', $conversation->id)
             ->with('sender:id,name,avatar_url')
             ->orderBy('created_at', 'desc')
-            ->paginate(50);
+            ->limit(50)->get();
 
         return response()->json([
-            'messages' => $messages->items(),
-            'meta' => [
-                'current_page' => $messages->currentPage(),
-                'total' => $messages->total(),
-                'has_more' => $messages->hasMorePages(),
-            ]
+            'success' => true,
+            'messages' => $messages,
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreMessageRequest $request)
     {
-        $request->validate([
-            'conversation_id' => 'required|exists:conversations,id',
-            'message' => 'required|string|max:2000',
-        ]);
-
         $user = Auth::user();
         $conversation = Conversation::findOrFail($request->conversation_id);
 
         if (!in_array($user->id, [$conversation->user1_id, $conversation->user2_id])) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            return response()->json([
+                'success' => false,
+                'message' => 'У вас нет доступа к этому диалогу'
+            ], 403);
         }
 
         $message = Message::create([
@@ -68,7 +62,7 @@ class MessageController extends Controller
 
         $message->load('sender:id,name,avatar_url');
 
-        event(new MessageSent($message));
+        //event(new MessageSent($message));
 
         return response()->json([
             'message' => [
@@ -86,31 +80,49 @@ class MessageController extends Controller
         ], 201);
     }
 
-    public function markAsRead(Request $request)
+    public function markAsRead(MarkAsReadRequest $request)
     {
-        $request->validate([
-            'message_ids' => 'required|array',
-            'message_ids.*' => 'exists:messages,id',
-        ]);
-
         $user = Auth::user();
 
-        Message::whereIn('id', $request->message_ids)
+        $updatedCount = Message::whereIn('id', $request->message_ids)
             ->where('sender_id', '!=', $user->id)
-            ->update(['is_read' => true]);
+            ->where('is_read', 0)
+            ->update(['is_read' => 1]);
 
-        return response()->json(['message' => 'Messages marked as read']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Сообщения отмечены как прочитанные',
+            'data' => [
+                'marked_count' => $updatedCount
+            ]
+        ]);
     }
 
-    public function destroy(Message $message)
+    public function destroy($id)
     {
         $user = Auth::user();
+
+        $message = Message::find($id);
+
+        if (!$message) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Сообщение не найдено'
+            ], 404);
+        }
+
         if ($message->sender_id !== $user->id) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            return response()->json([
+                'success' => false,
+                'message' => 'Вы можете удалять только свои сообщения'
+            ], 403);
         }
 
         $message->delete();
 
-        return response()->json(['message' => 'Message deleted']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Сообщение удалено'
+        ]);
     }
 }

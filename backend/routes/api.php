@@ -5,6 +5,7 @@ use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\MessageController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Broadcast;
+use App\Http\Controllers\ProfileController;
 
 
 Route::post('/broadcasting/auth', function (\Illuminate\Http\Request $request) {
@@ -25,6 +26,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('conversations', ConversationController::class);
     Route::apiResource('messages', MessageController::class);
+
+    Route::get('/profile', [ProfileController::class, 'show']);
+    Route::put('/profile/name', [ProfileController::class, 'updateName']);
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword']);
+    Route::delete('/profile/delete_account', [ProfileController::class, 'deleteAccount']);
 
     Route::post('/messages/mark-read', [MessageController::class, 'markAsRead']);
 });

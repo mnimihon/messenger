@@ -30,6 +30,8 @@ return new class extends Migration
             $table->timestamp('login_locked_until')->nullable();
 
             $table->timestamps();
+
+            $table->softDeletes();
         });
     }
 

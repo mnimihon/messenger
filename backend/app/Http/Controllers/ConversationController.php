@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Conversation\StoreConversationRequest;
 use App\Models\Conversation;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -44,22 +45,20 @@ class ConversationController extends Controller
                 ];
             });
 
-        return response()->json($conversations);
+        return response()->json([
+            'success' => true,
+            'data' => $conversations
+        ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreConversationRequest $request)
     {
-        $request->validate([
-            'other_user_id' => 'required|exists:users,id'
-        ]);
-
         $user = Auth::user();
         $otherUserId = $request->other_user_id;
         if ($user->id == $otherUserId) {
-            return response()->json(['error' => 'Cannot create conversation with yourself'], 400);
+            return response()->json(['error' => 'Не удается создать диалог с самим собой'], 400);
         }
 
-        // Ищем существующий диалог
         $conversation = Conversation::where(function($query) use ($user, $otherUserId) {
             $query->where('user1_id', $user->id)
                 ->where('user2_id', $otherUserId);
@@ -71,7 +70,11 @@ class ConversationController extends Controller
             ->first();
 
         if ($conversation) {
-            return $this->show($conversation);
+            return response()->json([
+                'success' => true,
+                'message' => 'Диалог уже существует',
+                'data' => $this->formatConversation($conversation)
+            ]);
         }
 
         $user1_id = min($user->id, $otherUserId);
@@ -82,19 +85,69 @@ class ConversationController extends Controller
             'user2_id' => $user2_id,
         ]);
 
-        return $this->show($conversation);
+        return response()->json([
+            'success' => true,
+            'message' => 'Диалог успешно создан',
+            'data' => $this->formatConversation($conversation)
+        ], 201);
     }
 
-    public function show(Conversation $conversation)
+    public function show($id)
     {
-        $user = Auth::user();
-        if (!in_array($user->id, [$conversation->user1_id, $conversation->user2_id])) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+        $conversation = Conversation::find($id);
+        if (!$conversation) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Диалог не найден'
+            ], 404);
         }
 
-        $otherUser = $conversation->otherUser($user->id);
+        $user = Auth::user();
+        if (!in_array($user->id, [$conversation->user1_id, $conversation->user2_id])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'У вас нет доступа к этому диалогу'
+            ], 403);
+        }
 
         return response()->json([
+            'success' => true,
+            'data' => $this->formatConversation($conversation)
+        ]);
+    }
+
+    public function destroy($id)
+    {
+        $conversation = Conversation::find($id);
+        if (!$conversation) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Диалог не найден'
+            ], 404);
+        }
+
+        $user = Auth::user();
+        if (!in_array($user->id, [$conversation->user1_id, $conversation->user2_id])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'У вас нет доступа к этому диалогу'
+            ], 403);
+        }
+
+        $conversation->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Диалог успешно удален'
+        ]);
+    }
+
+    private function formatConversation(Conversation $conversation): array
+    {
+        $user = Auth::user();
+        $otherUser = $conversation->otherUser($user->id);
+
+        return [
             'id' => $conversation->id,
             'other_user' => [
                 'id' => $otherUser->id,
@@ -102,19 +155,7 @@ class ConversationController extends Controller
                 'avatar_url' => $otherUser->avatar_url,
             ],
             'created_at' => $conversation->created_at,
-        ]);
-    }
-
-    public function destroy(Conversation $conversation)
-    {
-        $user = Auth::user();
-
-        if (!in_array($user->id, [$conversation->user1_id, $conversation->user2_id])) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
-
-        $conversation->delete();
-
-        return response()->json(['message' => 'Conversation deleted']);
+            'updated_at' => $conversation->updated_at,
+        ];
     }
 }
