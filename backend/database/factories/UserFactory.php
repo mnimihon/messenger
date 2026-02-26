@@ -14,7 +14,6 @@ class UserFactory extends Factory
             'name' => $this->faker->name(),
             'email' => $this->faker->unique()->safeEmail(),
             'password' => Hash::make('password'),
-            'avatar_url' => $this->faker->optional(0.6)->imageUrl(100, 100, 'people'),
             'created_at' => $this->faker->dateTimeBetween('-2 years', 'now'),
             'updated_at' => $this->faker->dateTimeBetween('-2 years', 'now'),
             'email_verified_at' => $this->faker->optional(0.7)->dateTimeBetween('-1 year', 'now'),

@@ -24,7 +24,6 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'avatar_url' => $this->generateAvatar($request->name),
             'verification_code' =>  $verificationCode,
             'verification_code_expires_at' =>  now()->addMinutes(10)
         ]);
@@ -179,7 +178,6 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'avatar_url' => $user->avatar_url
             ]
         ]);
     }
@@ -298,7 +296,6 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'avatar_url' => $user->avatar_url
             ]
         ]);
     }
@@ -315,12 +312,6 @@ class AuthController extends Controller
         ]);
     }
 
-    private function generateAvatar(string $name): string
-    {
-        $nameForAvatar = urlencode($name);
-        return "https://api.dicebear.com/7.x/avataaars/svg?seed={$nameForAvatar}";
-    }
-
     public function user(Request $request)
     {
         $user = $request->user();
@@ -329,7 +320,6 @@ class AuthController extends Controller
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
-            'avatar_url' => $user->avatar_url,
             'created_at' => $user->created_at,
             'email_verified_at' => $user->email_verified_at,
         ]);

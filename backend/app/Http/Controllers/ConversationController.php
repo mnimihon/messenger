@@ -30,7 +30,6 @@ class ConversationController extends Controller
                     'other_user' => [
                         'id' => $otherUser->id,
                         'name' => $otherUser->name,
-                        'avatar_url' => $otherUser->avatar_url,
                     ],
                     'last_message' => $lastMessage ? [
                         'message' => $lastMessage->message,
@@ -152,7 +151,6 @@ class ConversationController extends Controller
             'other_user' => [
                 'id' => $otherUser->id,
                 'name' => $otherUser->name,
-                'avatar_url' => $otherUser->avatar_url,
             ],
             'created_at' => $conversation->created_at,
             'updated_at' => $conversation->updated_at,

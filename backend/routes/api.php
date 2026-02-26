@@ -6,6 +6,7 @@ use App\Http\Controllers\MessageController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Broadcast;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PhotoController;
 
 
 Route::post('/broadcasting/auth', function (\Illuminate\Http\Request $request) {
@@ -33,4 +34,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/profile/delete_account', [ProfileController::class, 'deleteAccount']);
 
     Route::post('/messages/mark-read', [MessageController::class, 'markAsRead']);
+
+    Route::get('/photos', [PhotoController::class, 'index']);
+    Route::post('/photos', [PhotoController::class, 'store']);
+    Route::post('/photos/{photo}/set-main', [PhotoController::class, 'setMain']);
+    Route::delete('/photos/{photo}', [PhotoController::class, 'destroy']);
 });

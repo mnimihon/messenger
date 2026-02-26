@@ -29,7 +29,7 @@ class MessageController extends Controller
             ->update(['is_read' => true]);
 
         $messages = Message::where('conversation_id', $conversation->id)
-            ->with('sender:id,name,avatar_url')
+            ->with('sender:id,name')
             ->orderBy('created_at', 'desc')
             ->limit(50)->get();
 
@@ -60,7 +60,7 @@ class MessageController extends Controller
 
         $conversation->touch();
 
-        $message->load('sender:id,name,avatar_url');
+        $message->load('sender:id,name');
 
         //event(new MessageSent($message));
 
@@ -71,7 +71,6 @@ class MessageController extends Controller
                 'sender' => [
                     'id' => $message->sender->id,
                     'name' => $message->sender->name,
-                    'avatar_url' => $message->sender->avatar_url,
                 ],
                 'message' => $message->message,
                 'is_read' => $message->is_read,

@@ -24,7 +24,6 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'avatar_url',
         'verification_code',
         'verification_code_expires_at',
         'reset_password_code_expires_at',
@@ -74,6 +73,29 @@ class User extends Authenticatable
         return $this->conversations()
             ->where('id', $conversationId)
             ->exists();
+    }
+
+    public function photos()
+    {
+        return $this->hasMany(UserPhoto::class);
+    }
+
+    public function mainPhoto()
+    {
+        return $this->hasOne(UserPhoto::class)->where('is_main', true);
+    }
+
+    public function getAvatarUrlAttribute($value)
+    {
+        $mainPhoto = $this->mainPhoto;
+        if ($mainPhoto) {
+            return $mainPhoto->url;
+        }
+
+        /**
+         * @TODO добавить дефолтный аватар
+         */
+        return '';
     }
 
 }
