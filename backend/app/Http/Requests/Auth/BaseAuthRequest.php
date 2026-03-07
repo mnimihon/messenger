@@ -30,6 +30,15 @@ abstract class BaseAuthRequest extends FormRequest
         ];
     }
 
+    public function attributes(): array
+    {
+        return [
+            'email' => 'Email',
+            'password' => 'Пароль',
+            'name' => 'Имя',
+        ];
+    }
+
     protected function failedValidation(Validator $validator)
     {
         throw new HttpResponseException(

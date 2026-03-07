@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Profile\UpdateNameRequest;
 use App\Http\Requests\Profile\UpdatePasswordRequest;
 use App\Http\Requests\Profile\DeleteAccountRequest;
+use App\Models\User;
+use App\Services\UserService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 
@@ -24,12 +26,10 @@ class ProfileController extends Controller
         ]);
     }
 
-    public function updateName(UpdateNameRequest $request)
+    public function updateName(UpdateNameRequest $request, UserService $userService)
     {
         $user = Auth::user();
-
-        $user->name = $request->name;
-        $user->save();
+        $userService->setName($user->id, $request->name);
 
         return response()->json([
             'success' => true,
@@ -42,7 +42,7 @@ class ProfileController extends Controller
         ]);
     }
 
-    public function updatePassword(UpdatePasswordRequest $request)
+    public function updatePassword(UpdatePasswordRequest $request, UserService $userService)
     {
         $user = Auth::user();
         if (!Hash::check($request->current_password, $user->password)) {
@@ -52,8 +52,7 @@ class ProfileController extends Controller
             ], 403);
         }
 
-        $user->password = Hash::make($request->new_password);
-        $user->save();
+        $userService->setPassword(User::find($user->id), $request->new_password);
 
         return response()->json([
             'success' => true,

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\DTO\UserCreateDTO;
 use App\Http\Requests\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
@@ -11,23 +12,23 @@ use App\Http\Requests\Auth\VerifyEmailRequest;
 use App\Models\User;
 use App\Notifications\EmailVerificationCodeNotification;
 use App\Notifications\ResetPasswordNotification;
+use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function register(RegisterRequest $request)
+    public function register(RegisterRequest $request, UserService $userService)
     {
-        $verificationCode = $this->generateVerificationCode();
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'verification_code' =>  $verificationCode,
-            'verification_code_expires_at' =>  now()->addMinutes(10)
-        ]);
-
+        $verificationCode = $userService->generateCode();
+        $user = $userService->create(new UserCreateDTO(
+            name: $request->name,
+            email: $request->email,
+            password: Hash::make($request->password),
+            verificationCode: $verificationCode,
+            verificationCodeExpiresAt: now()->addMinutes(10)
+        ));
         $user->notify(new EmailVerificationCodeNotification($verificationCode));
 
         return response()->json([
@@ -37,10 +38,9 @@ class AuthController extends Controller
     }
 
 
-    public function verifyEmail(VerifyEmailRequest $request)
+    public function verifyEmail(VerifyEmailRequest $request, UserService $userService)
     {
-        $user = User::where('email', $request->email)->first();
-
+        $user = $userService->getByEmail($request->email);
         if ($user->hasVerifiedEmail()) {
             return response()->json([
                 'success' => false,
@@ -48,19 +48,14 @@ class AuthController extends Controller
             ], 400);
         }
 
-        if ($user->verification_code != $request->code ||
-            $user->verification_code_expires_at < now()) {
+        if ($userService->checkVerificationCode($user, $request->code)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Неверный или истекший код подтверждения'
             ], 400);
         }
 
-        $user->email_verified_at = now();
-        $user->verification_code = null;
-        $user->verification_code_expires_at = null;
-        $user->save();
-
+        $userService->setVerifiedEmail($user);
         $token = $user->createToken('auth_token', ['*'], now()->addDays(30));
 
         return response()->json([
@@ -71,15 +66,9 @@ class AuthController extends Controller
         ]);
     }
 
-    private function generateVerificationCode(): int
+    public function resendCode(ResendCodeRequest $request, UserService $userService)
     {
-        return random_int(100000, 999999);
-    }
-
-    public function resendCode(ResendCodeRequest $request)
-    {
-        $user = User::where('email', $request->email)->first();
-
+        $user = $userService->getByEmail($request->email);
         if ($user->hasVerifiedEmail()) {
             return response()->json([
                 'success' => false,
@@ -87,19 +76,15 @@ class AuthController extends Controller
             ], 400);
         }
 
-        if ($user->verification_code_expires_at &&
-            round($user->verification_code_expires_at->diffInMinutes(now())) < 1) {
+        if ($userService->trySendCodeLater($user)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Код уже был отправлен. Попробуйте через минуту.',
-                'ddd' => $user->verification_code_expires_at->diffInMinutes(now()),
             ], 429);
         }
 
-        $verificationCode = $this->generateVerificationCode();
-        $user->verification_code = $verificationCode;
-        $user->verification_code_expires_at = now()->addMinutes(10);
-        $user->save();
+        $verificationCode = $userService->generateCode();
+        $userService->setVerificationCode($user, $verificationCode);
 
         $user->notify(new EmailVerificationCodeNotification($verificationCode));
 
@@ -109,11 +94,11 @@ class AuthController extends Controller
         ]);
     }
 
-    public function login(LoginRequest $request)
+    public function login(LoginRequest $request, UserService $userService)
     {
-        $user = User::where('email', $request->email)->first();
+        $user = $userService->getByEmail($request->email);
         if ($user) {
-            if ($user->login_locked_until && $user->login_locked_until > now()) {
+            if ($userService->isTooManyFailedLoginAttempts($user)) {
                 $minutesLeft = round($user->login_locked_until->diffInMinutes(now()));
                 return response()->json([
                     'success' => false,
@@ -127,10 +112,8 @@ class AuthController extends Controller
         if (!Auth::attempt($request->only('email', 'password'))) {
             if ($user) {
                 $user->increment('login_attempts');
-                if ($user->login_attempts >= 5) {
-                    $user->login_locked_until = now()->addMinutes(15);
-                    $user->login_attempts = 0;
-                    $user->save();
+                if ($user->login_attempts >= UserService::LOGIN_ATTEMPTS) {
+                    $userService->setCloseLogin($user);
 
                     return response()->json([
                         'success' => false,
@@ -140,7 +123,7 @@ class AuthController extends Controller
                     ], 429);
                 }
 
-                $attemptsLeft = 5 - $user->login_attempts;
+                $attemptsLeft = $userService->decrementAttempts($user, UserService::LOGIN_ATTEMPTS);
                 return response()->json([
                     'success' => false,
                     'message' => "Неверный email или пароль. Осталось попыток: {$attemptsLeft}",
@@ -163,8 +146,7 @@ class AuthController extends Controller
             ], 403);
         }
 
-        $user->login_attempts = 0;
-        $user->save();
+        $userService->setZeroLoginAttempts($user);
 
         $user->tokens()->delete();
         $token = $user->createToken('auth_token', ['*'], now()->addDays(30));
@@ -182,20 +164,18 @@ class AuthController extends Controller
         ]);
     }
 
-    public function forgotPassword(ForgotPasswordRequest  $request)
+    public function forgotPassword(ForgotPasswordRequest  $request, UserService $userService)
     {
-        $user = User::where('email', $request->email)->first();
-
-        if ($user->reset_password_code_sent_at &&
-            $user->reset_password_code_sent_at->diffInMinutes(now()) < 1) {
+        $user = $userService->getByEmail($request->email);
+        if ($userService->isCodeAlreadyBeenSent($user)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Код уже был отправлен. Попробуйте через минуту.',
-                'can_resend_after' => 60 - round($user->reset_password_code_sent_at->diffInSeconds(now()))
+                'message' => 'Код уже был отправлен. Попробуйте через ' . UserService::RESET_PASSWORD_MINUTES . ' минуту.',
+                'can_resend_after' => UserService::CAN_RESEND_AFTER - round($user->reset_password_code_sent_at->diffInSeconds(now()))
             ], 429);
         }
 
-        if ($user->reset_password_locked_until && $user->reset_password_locked_until > now()) {
+        if ($userService->isTooManyFailedResetAttempts($user)) {
             $minutesLeft = round($user->reset_password_locked_until->diffInMinutes(now()));
             return response()->json([
                 'success' => false,
@@ -204,16 +184,8 @@ class AuthController extends Controller
             ], 429);
         }
 
-        $code = random_int(100000, 999999);
-
-        $user->reset_password_code = $code;
-        $user->reset_password_code_expires_at = now()->addMinutes(10);
-        $user->reset_password_code_sent_at = now();
-
-        $user->reset_password_attempts = 0;
-        $user->reset_password_locked_until = null;
-
-        $user->save();
+        $code = $userService->generateCode();
+        $userService->setResetPasswordCode($user, $code);
 
         $user->notify(new ResetPasswordNotification($code));
 
@@ -223,11 +195,11 @@ class AuthController extends Controller
         ]);
     }
 
-    public function resetPassword(ResetPasswordRequest $request)
+    public function resetPassword(ResetPasswordRequest $request, UserService $userService)
     {
-        $user = User::where('email', $request->email)->first();
+        $user = $userService->getByEmail($request->email);
 
-        if ($user->reset_password_locked_until && $user->reset_password_locked_until > now()) {
+        if ($userService->isTooManyFailedResetAttempts($user)) {
             $minutesLeft = round($user->reset_password_locked_until->diffInMinutes(now()));
             return response()->json([
                 'success' => false,
@@ -244,9 +216,7 @@ class AuthController extends Controller
         }
 
         if ($user->reset_password_code_expires_at < now()) {
-            $user->reset_password_code = null;
-            $user->reset_password_code_expires_at = null;
-            $user->save();
+            $userService->setResetPasswordCodeNull($user);
 
             return response()->json([
                 'success' => false,
@@ -257,9 +227,8 @@ class AuthController extends Controller
         if ($user->reset_password_code != $request->code) {
             $user->increment('reset_password_attempts');
 
-            if ($user->reset_password_attempts >= 5) {
-                $user->reset_password_locked_until = now()->addMinutes(15);
-                $user->save();
+            if ($user->reset_password_attempts >= UserService::RESET_PASSWORD_ATTEMPTS) {
+                $userService->setCloseResetPassword($user);
 
                 return response()->json([
                     'success' => false,
@@ -268,7 +237,7 @@ class AuthController extends Controller
                 ], 429);
             }
 
-            $attemptsLeft = 5 - $user->reset_password_attempts;
+            $attemptsLeft = $userService->decrementAttempts($user, UserService::RESET_PASSWORD_ATTEMPTS);
 
             return response()->json([
                 'success' => false,
@@ -277,15 +246,12 @@ class AuthController extends Controller
             ], 400);
         }
 
-        $user->password = Hash::make($request->password);
-
-        $user->reset_password_code = null;
-        $user->reset_password_code_expires_at = null;
-        $user->save();
+        $userService->setPassword($user->id, $request->password);
+        $userService->setPasswordNull($user->id);
 
         $user->tokens()->delete();
 
-        $token = $user->createToken('auth_token', ['*'], now()->addDays(30));
+        $token = $user->createToken('auth_token', ['*'], now()->addDays(User::TOKEN_LIFETIME));
 
         return response()->json([
             'success' => true,
@@ -299,8 +265,6 @@ class AuthController extends Controller
             ]
         ]);
     }
-
-
 
     public function logout(Request $request)
     {

@@ -2,64 +2,58 @@
 
 namespace App\Http\Controllers;
 
+use App\DTO\MessageDTO;
 use App\Events\MessageSent;
 use App\Http\Requests\Message\IndexMessageRequest;
 use App\Http\Requests\Message\MarkAsReadRequest;
 use App\Http\Requests\Message\StoreMessageRequest;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Services\ConversationService;
+use App\Services\MessagesService;
 use Illuminate\Support\Facades\Auth;
 
 class MessageController extends Controller
 {
-    public function index(IndexMessageRequest $request)
+    public function index(IndexMessageRequest $request, ConversationService $conversationService, MessagesService $messagesService)
     {
         $user = Auth::user();
         $conversation = Conversation::findOrFail($request->conversation_id);
-        if (!in_array($user->id, [$conversation->user1_id, $conversation->user2_id])) {
+        if (!$conversationService->isAccessConversation($user->id, $conversation)) {
             return response()->json([
                 'success' => false,
                 'message' => 'У вас нет доступа к этому диалогу'
             ], 403);
         }
 
-        Message::where('conversation_id', $conversation->id)
-            ->where('sender_id', '!=', $user->id)
-            ->where('is_read', false)
-            ->update(['is_read' => true]);
-
-        $messages = Message::where('conversation_id', $conversation->id)
-            ->with('sender:id,name')
-            ->orderBy('created_at', 'desc')
-            ->limit(50)->get();
+        $messagesService->setIsReadAll($user->id, $conversation);
 
         return response()->json([
             'success' => true,
-            'messages' => $messages,
+            'data' => $messagesService->getByConversation($conversation, $request->cursor)
         ]);
     }
 
-    public function store(StoreMessageRequest $request)
+    public function store(StoreMessageRequest $request, ConversationService $conversationService, MessagesService $messagesService)
     {
         $user = Auth::user();
         $conversation = Conversation::findOrFail($request->conversation_id);
-
-        if (!in_array($user->id, [$conversation->user1_id, $conversation->user2_id])) {
+        if (!$conversationService->isAccessConversation($user->id, $conversation)) {
             return response()->json([
                 'success' => false,
                 'message' => 'У вас нет доступа к этому диалогу'
             ], 403);
         }
 
-        $message = Message::create([
-            'conversation_id' => $conversation->id,
-            'sender_id' => $user->id,
-            'message' => $request->message,
-            'is_read' => false,
-        ]);
-
-        $conversation->touch();
-
+        $message = $messagesService->create(
+            new MessageDTO(
+                conversationID: $conversation->id,
+                senderID: $user->id,
+                message: $request->message,
+                isRead: false,
+                createdAt: new \DateTime()
+            )
+        );
         $message->load('sender:id,name');
 
         //event(new MessageSent($message));
