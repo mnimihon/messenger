@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Conversation\StoreConversationRequest;
 use App\Models\Conversation;
+use App\Models\User;
 use App\Services\ConversationService;
 use Illuminate\Support\Facades\Auth;
 
@@ -23,7 +24,10 @@ class ConversationController extends Controller
         $user = Auth::user();
         $otherUserID = $request->other_user_id;
         if ($user->id == $otherUserID) {
-            return response()->json(['error' => 'Не удается создать диалог с самим собой'], 400);
+            return response()->json([
+                'success' => true,
+                'message' => 'Не удается создать диалог с самим собой'
+            ], 400);
         }
 
         if ($conversationService->isConversationExists($user->id, $otherUserID)) {
@@ -53,7 +57,7 @@ class ConversationController extends Controller
         }
 
         $user = Auth::user();
-        if (!$conversationService->isAccessConversation($user->id, $conversation)) {
+        if (!$user->hasAccessToConversation($id)) {
             return response()->json([
                 'success' => false,
                 'message' => 'У вас нет доступа к этому диалогу'
@@ -77,7 +81,7 @@ class ConversationController extends Controller
         }
 
         $user = Auth::user();
-        if (!$conversationService->isAccessConversation($user->id, $conversation)) {
+        if (!$user->hasAccessToConversation($id)) {
             return response()->json([
                 'success' => false,
                 'message' => 'У вас нет доступа к этому диалогу'

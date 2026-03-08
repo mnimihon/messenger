@@ -9,17 +9,16 @@ use App\Http\Requests\Message\MarkAsReadRequest;
 use App\Http\Requests\Message\StoreMessageRequest;
 use App\Models\Conversation;
 use App\Models\Message;
-use App\Services\ConversationService;
 use App\Services\MessagesService;
 use Illuminate\Support\Facades\Auth;
 
 class MessageController extends Controller
 {
-    public function index(IndexMessageRequest $request, ConversationService $conversationService, MessagesService $messagesService)
+    public function index(IndexMessageRequest $request, MessagesService $messagesService)
     {
         $user = Auth::user();
         $conversation = Conversation::findOrFail($request->conversation_id);
-        if (!$conversationService->isAccessConversation($user->id, $conversation)) {
+        if (!$user->hasAccessToConversation($conversation->id)) {
             return response()->json([
                 'success' => false,
                 'message' => 'У вас нет доступа к этому диалогу'
@@ -34,11 +33,11 @@ class MessageController extends Controller
         ]);
     }
 
-    public function store(StoreMessageRequest $request, ConversationService $conversationService, MessagesService $messagesService)
+    public function store(StoreMessageRequest $request, MessagesService $messagesService)
     {
         $user = Auth::user();
         $conversation = Conversation::findOrFail($request->conversation_id);
-        if (!$conversationService->isAccessConversation($user->id, $conversation)) {
+        if (!$user->hasAccessToConversation($conversation->id)) {
             return response()->json([
                 'success' => false,
                 'message' => 'У вас нет доступа к этому диалогу'
@@ -56,7 +55,7 @@ class MessageController extends Controller
         );
         $message->load('sender:id,name');
 
-        //event(new MessageSent($message));
+        event(new MessageSent($message));
 
         return response()->json([
             'message' => [
@@ -80,6 +79,10 @@ class MessageController extends Controller
         $updatedCount = Message::whereIn('id', $request->message_ids)
             ->where('sender_id', '!=', $user->id)
             ->where('is_read', 0)
+            ->whereHas('conversation', function ($q) use ($user) {
+                $q->where('user1_id', $user->id)
+                    ->orWhere('user2_id', $user->id);
+            })
             ->update(['is_read' => 1]);
 
         return response()->json([

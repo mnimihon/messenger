@@ -40,7 +40,7 @@ class UserServiceImpl implements UserService {
         return $this->repository->getByEmail($email);
     }
 
-    public function checkVerificationCode(User $user, int $code): bool
+    public function checkUnVerificationCode(User $user, int $code): bool
     {
         return $user->verification_code != $code ||
             $user->verification_code_expires_at < now();
@@ -71,6 +71,16 @@ class UserServiceImpl implements UserService {
         return $user->login_locked_until && $user->login_locked_until > now();
     }
 
+    public function isTooManyFailedLoginAttemptsAccessBlocked(User $user): bool
+    {
+        return $user->login_attempts >= self::LOGIN_ATTEMPTS;
+    }
+
+    public function isTooManyFailedResetAttemptsAccessBlocked(User $user): bool
+    {
+        return $user->reset_password_attempts >= self::RESET_PASSWORD_ATTEMPTS;
+    }
+
     public function setCloseLogin(User $user): bool
     {
         return $this->repository->setCloseLogin($user);
@@ -86,9 +96,9 @@ class UserServiceImpl implements UserService {
         return $this->repository->setZeroLoginAttempts($user);
     }
 
-    public function decrementAttempts(User $user, int $attempts): int
+    public function decrementAttempts(int $currentAttempts, int $possibleAttempts): int
     {
-        return $attempts - $user->login_attempts;
+        return $possibleAttempts - $currentAttempts;
     }
 
     public function isCodeAlreadyBeenSent(User $user): bool
@@ -105,6 +115,16 @@ class UserServiceImpl implements UserService {
     public function setResetPasswordCodeNull(User $user): bool
     {
         return $this->repository->setResetPasswordCodeNull($user);
+    }
+
+    public function isCodeExpired(User $user): bool
+    {
+        return $user->reset_password_code_expires_at < now();
+    }
+
+    public function isCodeEqual(User $user, int $code): bool
+    {
+        return $user->reset_password_code == $code;
     }
 
     public function setName(int $userID, string $name): bool

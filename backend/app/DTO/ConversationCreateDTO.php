@@ -13,8 +13,8 @@ class ConversationCreateDTO
     public function toDatabaseArray(): array
     {
         return [
-            'conversation_id' => $this->userID,
-            'sender_id' => $this->otherUserID,
+            'user1_id' => $this->userID,
+            'user2_id' => $this->otherUserID,
         ];
     }
 }

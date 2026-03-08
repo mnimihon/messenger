@@ -2,6 +2,7 @@
 namespace App\Repositories\Implementations;
 
 use App\DTO\PhotoCreateDTO;
+use App\Models\Message;
 use App\Models\User;
 use App\Models\UserPhoto;
 use Illuminate\Database\Eloquent\Collection;
@@ -32,9 +33,9 @@ class PhotoRepositoryImpl implements PhotoRepository
             });
     }
 
-    public function delete(UserPhoto $user): bool
+    public function delete(UserPhoto $userPhoto): bool
     {
-
+        return $userPhoto->delete();
     }
 
     public function create(PhotoCreateDTO $dto): UserPhoto

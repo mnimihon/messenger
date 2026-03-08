@@ -60,7 +60,7 @@ class PhotoServiceImpl implements PhotoService {
                 ->first();
 
             if ($newMainPhoto) {
-                $this->repository->setMain($photo);
+                $this->repository->setMain($newMainPhoto);
             }
         }
 

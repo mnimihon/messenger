@@ -38,7 +38,7 @@ class MessagesServiceImpl implements MessagesService {
         return $this->repository->getAll($limit);
     }
 
-    public function setIsReadAll(int $userID, Conversation $conversation): Message
+    public function setIsReadAll(int $userID, Conversation $conversation): int
     {
         return $this->repository->setIsReadAll($userID, $conversation);
     }

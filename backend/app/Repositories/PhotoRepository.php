@@ -9,7 +9,7 @@ interface PhotoRepository
 {
 
     public function getAll(int $userID): Collection;
-    public function delete(UserPhoto $user): bool;
+    public function delete(UserPhoto $userPhoto): bool;
     public function create(PhotoCreateDTO $dto): UserPhoto;
     public function setMain(UserPhoto $photo): bool;
 }

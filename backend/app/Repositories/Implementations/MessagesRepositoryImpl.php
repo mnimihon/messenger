@@ -40,7 +40,7 @@ class MessagesRepositoryImpl implements MessagesRepository {
         return $message->delete();
     }
 
-    public function setIsReadAll(int $userID, Conversation $conversation): Message
+    public function setIsReadAll(int $userID, Conversation $conversation): int
     {
         return Message::where('conversation_id', $conversation->id)
             ->where('sender_id', '!=', $userID)

@@ -7,9 +7,9 @@ use Illuminate\Notifications\Messages\MailMessage;
 class ResetPasswordNotification extends Notification
 {
 
-    private $code;
+    private int $code;
 
-    public function __construct($code)
+    public function __construct(int $code)
     {
         $this->code = $code;
     }

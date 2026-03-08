@@ -48,7 +48,7 @@ class AuthController extends Controller
             ], 400);
         }
 
-        if ($userService->checkVerificationCode($user, $request->code)) {
+        if ($userService->checkUnVerificationCode($user, $request->code)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Неверный или истекший код подтверждения'
@@ -112,7 +112,7 @@ class AuthController extends Controller
         if (!Auth::attempt($request->only('email', 'password'))) {
             if ($user) {
                 $user->increment('login_attempts');
-                if ($user->login_attempts >= UserService::LOGIN_ATTEMPTS) {
+                if ($userService->isTooManyFailedLoginAttemptsAccessBlocked($user)) {
                     $userService->setCloseLogin($user);
 
                     return response()->json([
@@ -123,7 +123,7 @@ class AuthController extends Controller
                     ], 429);
                 }
 
-                $attemptsLeft = $userService->decrementAttempts($user, UserService::LOGIN_ATTEMPTS);
+                $attemptsLeft = $userService->decrementAttempts($user->login_attempts, UserService::LOGIN_ATTEMPTS);
                 return response()->json([
                     'success' => false,
                     'message' => "Неверный email или пароль. Осталось попыток: {$attemptsLeft}",
@@ -215,7 +215,7 @@ class AuthController extends Controller
             ], 400);
         }
 
-        if ($user->reset_password_code_expires_at < now()) {
+        if ($userService->isCodeExpired($user)) {
             $userService->setResetPasswordCodeNull($user);
 
             return response()->json([
@@ -224,10 +224,10 @@ class AuthController extends Controller
             ], 400);
         }
 
-        if ($user->reset_password_code != $request->code) {
+        if (!$userService->isCodeEqual($user, $request->code)) {
             $user->increment('reset_password_attempts');
 
-            if ($user->reset_password_attempts >= UserService::RESET_PASSWORD_ATTEMPTS) {
+            if ($userService->isTooManyFailedResetAttemptsAccessBlocked($user)) {
                 $userService->setCloseResetPassword($user);
 
                 return response()->json([
@@ -237,7 +237,7 @@ class AuthController extends Controller
                 ], 429);
             }
 
-            $attemptsLeft = $userService->decrementAttempts($user, UserService::RESET_PASSWORD_ATTEMPTS);
+            $attemptsLeft = $userService->decrementAttempts($user->reset_password_attempts, UserService::RESET_PASSWORD_ATTEMPTS);
 
             return response()->json([
                 'success' => false,

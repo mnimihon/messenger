@@ -32,10 +32,4 @@ class ConversationServiceImpl implements ConversationService {
             otherUserID: $user2ID
         ));
     }
-
-    public function isAccessConversation(int $userID, Conversation $conversation): bool
-    {
-        $user = User::find($userID);
-        return in_array($user->id, [$conversation->user1_id, $conversation->user2_id]);
-    }
 }
