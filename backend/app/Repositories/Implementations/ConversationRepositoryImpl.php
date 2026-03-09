@@ -44,7 +44,9 @@ class ConversationRepositoryImpl implements ConversationRepository {
                     'unread_count' => $conversation->unread_count,
                     'updated_at' => $conversation->updated_at,
                 ];
-            });
+            })
+            ->values()
+            ->all();
     }
 
     public function isConversationExists(int $userID, int $otherUserID): bool

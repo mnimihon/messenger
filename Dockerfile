@@ -32,6 +32,7 @@ RUN echo 'decorate_workers_output = no' >> /usr/local/etc/php-fpm.d/zz-docker.co
 RUN echo 'display_errors = On' >> /usr/local/etc/php/conf.d/docker-php.ini
 RUN echo 'display_startup_errors = On' >> /usr/local/etc/php/conf.d/docker-php.ini
 RUN echo 'error_reporting = E_ALL' >> /usr/local/etc/php/conf.d/docker-php.ini
+RUN echo "memory_limit = 512M" > /usr/local/etc/php/conf.d/memory-limit.ini
 
 RUN chown -R www-data:www-data /var/www/html
 

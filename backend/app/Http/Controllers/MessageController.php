@@ -28,9 +28,11 @@ class MessageController extends Controller
 
         $messagesRepository->setIsReadAll($user->id, $conversation);
 
+        $cursor = (int) $request->input('cursor', 0);
+
         return response()->json([
             'success' => true,
-            'data' => $messagesService->getByConversation($conversation, $request->cursor)
+            'data' => $messagesService->getByConversation($conversation, $cursor)
         ]);
     }
 
