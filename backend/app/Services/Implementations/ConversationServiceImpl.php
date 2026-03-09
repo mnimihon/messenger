@@ -13,17 +13,7 @@ class ConversationServiceImpl implements ConversationService {
         private readonly ConversationRepository $repository
     ) {}
 
-    public function getConversations(int $userID): array
-    {
-        return $this->repository->getConversations($userID);
-    }
-
-    public function isConversationExists(int $userID, int $otherUserID): bool
-    {
-        return $this->repository->isConversationExists($userID, $otherUserID);
-    }
-
-    public function createConversation($userID, $otherUserID): Conversation
+    public function createConversation(int $userID, int $otherUserID): Conversation
     {
         $user1ID = min($userID, $otherUserID);
         $user2ID = max($userID, $otherUserID);

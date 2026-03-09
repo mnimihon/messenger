@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Photo\StorePhotosRequest;
 use App\Models\UserPhoto;
+use App\Repositories\PhotoRepository;
 use App\Services\PhotoService;
 use Illuminate\Support\Facades\Auth;
 
@@ -12,12 +13,12 @@ class PhotoController extends Controller
     const MAX_PHOTOS = 10;
     const MAX_FILE_SIZE = 2 * 1024 * 1024;
 
-    public function index(PhotoService $photoService)
+    public function index(PhotoRepository $photoRepository)
     {
         $user = Auth::user();
         return response()->json([
             'success' => true,
-            'data' => $photoService->getAll($user->id)
+            'data' => $photoRepository->getAll($user->id)
         ]);
     }
 
@@ -63,7 +64,7 @@ class PhotoController extends Controller
     }
 
 
-    public function setMain(UserPhoto $photo, PhotoService $photoService)
+    public function setMain(UserPhoto $photo, PhotoRepository $photoRepository)
     {
         $user = Auth::user();
 
@@ -74,7 +75,7 @@ class PhotoController extends Controller
             ], 403);
         }
 
-        $photoService->setMain($photo);
+        $photoRepository->setMain($photo);
 
         return response()->json([
             'success' => true,

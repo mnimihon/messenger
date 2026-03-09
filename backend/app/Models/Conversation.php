@@ -42,8 +42,8 @@ class Conversation extends Model
         return collect([$this->user1, $this->user2]);
     }
 
-    public function otherUser($userId)
+    public function otherUser($userID)
     {
-        return $userId == $this->user1_id ? $this->user2 : $this->user1;
+        return $userID == $this->user1_id ? $this->user2 : $this->user1;
     }
 }

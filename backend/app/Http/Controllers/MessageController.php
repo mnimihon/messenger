@@ -9,12 +9,13 @@ use App\Http\Requests\Message\MarkAsReadRequest;
 use App\Http\Requests\Message\StoreMessageRequest;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Repositories\MessagesRepository;
 use App\Services\MessagesService;
 use Illuminate\Support\Facades\Auth;
 
 class MessageController extends Controller
 {
-    public function index(IndexMessageRequest $request, MessagesService $messagesService)
+    public function index(IndexMessageRequest $request, MessagesService $messagesService, MessagesRepository $messagesRepository)
     {
         $user = Auth::user();
         $conversation = Conversation::findOrFail($request->conversation_id);
@@ -25,7 +26,7 @@ class MessageController extends Controller
             ], 403);
         }
 
-        $messagesService->setIsReadAll($user->id, $conversation);
+        $messagesRepository->setIsReadAll($user->id, $conversation);
 
         return response()->json([
             'success' => true,
@@ -33,7 +34,7 @@ class MessageController extends Controller
         ]);
     }
 
-    public function store(StoreMessageRequest $request, MessagesService $messagesService)
+    public function store(StoreMessageRequest $request, MessagesRepository $messagesRepository)
     {
         $user = Auth::user();
         $conversation = Conversation::findOrFail($request->conversation_id);
@@ -44,7 +45,7 @@ class MessageController extends Controller
             ], 403);
         }
 
-        $message = $messagesService->create(
+        $message = $messagesRepository->create(
             new MessageDTO(
                 conversationID: $conversation->id,
                 senderID: $user->id,
@@ -72,24 +73,14 @@ class MessageController extends Controller
         ], 201);
     }
 
-    public function markAsRead(MarkAsReadRequest $request)
+    public function markAsRead(MarkAsReadRequest $request, MessagesRepository $messagesRepository)
     {
         $user = Auth::user();
-
-        $updatedCount = Message::whereIn('id', $request->message_ids)
-            ->where('sender_id', '!=', $user->id)
-            ->where('is_read', 0)
-            ->whereHas('conversation', function ($q) use ($user) {
-                $q->where('user1_id', $user->id)
-                    ->orWhere('user2_id', $user->id);
-            })
-            ->update(['is_read' => 1]);
-
         return response()->json([
             'success' => true,
             'message' => 'Сообщения отмечены как прочитанные',
             'data' => [
-                'marked_count' => $updatedCount
+                'marked_count' => $messagesRepository->markAsRead($user->id, $request->message_ids)
             ]
         ]);
     }

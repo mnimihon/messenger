@@ -17,16 +17,6 @@ class PhotoServiceImpl implements PhotoService {
         private readonly PhotoRepository $repository
     ) {}
 
-    public function getAll(int $userID): Collection
-    {
-        return $this->repository->getAll($userID);
-    }
-
-    public function setMain(UserPhoto $photo): bool
-    {
-        return $this->repository->setMain($photo);
-    }
-
     public function store(UploadedFile $file, int $userID): UserPhoto
     {
         $filename = uniqid() . '.' . $file->getClientOriginalExtension();

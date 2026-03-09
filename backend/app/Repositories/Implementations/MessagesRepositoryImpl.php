@@ -4,6 +4,7 @@ namespace App\Repositories\Implementations;
 use App\DTO\MessageDTO;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\User;
 use App\Repositories\MessagesRepository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -13,11 +14,6 @@ class MessagesRepositoryImpl implements MessagesRepository {
     public function __construct(
         private readonly Message $model
     ) {}
-
-    public function getByID(int $id): ?Message
-    {
-        return $this->model->find($id);
-    }
 
     public function getAll($limit = 10): Collection
     {
@@ -60,5 +56,18 @@ class MessagesRepositoryImpl implements MessagesRepository {
             $query->where('id', '<', $cursor);
         }
         return $query->get();
+    }
+
+    public function markAsRead(int $userID, array $messageIDs): int
+    {
+        $user = User::find($userID);
+        return Message::whereIn('id', $messageIDs)
+            ->where('sender_id', '!=', $user->id)
+            ->where('is_read', 0)
+            ->whereHas('conversation', function ($q) use ($user) {
+                $q->where('user1_id', $user->id)
+                    ->orWhere('user2_id', $user->id);
+            })
+            ->update(['is_read' => 1]);
     }
 }

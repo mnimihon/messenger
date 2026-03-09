@@ -5,32 +5,33 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Conversation\StoreConversationRequest;
 use App\Models\Conversation;
 use App\Models\User;
+use App\Repositories\ConversationRepository;
 use App\Services\ConversationService;
 use Illuminate\Support\Facades\Auth;
 
 class ConversationController extends Controller
 {
-    public function index(ConversationService $conversationService)
+    public function index(ConversationRepository $conversationRepository)
     {
         $user = Auth::user();
         return response()->json([
             'success' => true,
-            'data' => $conversationService->getConversations($user->id)
+            'data' => $conversationRepository->getConversations($user->id)
         ]);
     }
 
-    public function store(StoreConversationRequest $request, ConversationService $conversationService)
+    public function store(StoreConversationRequest $request, ConversationService $conversationService, ConversationRepository $conversationRepository)
     {
         $user = Auth::user();
         $otherUserID = $request->other_user_id;
         if ($user->id == $otherUserID) {
             return response()->json([
-                'success' => true,
+                'success' => false,
                 'message' => 'Не удается создать диалог с самим собой'
             ], 400);
         }
 
-        if ($conversationService->isConversationExists($user->id, $otherUserID)) {
+        if ($conversationRepository->isConversationExists($user->id, $otherUserID)) {
             return response()->json([
                 'success' => true,
                 'message' => 'Диалог уже существует'
@@ -46,7 +47,7 @@ class ConversationController extends Controller
         ], 201);
     }
 
-    public function show($id, ConversationService $conversationService)
+    public function show($id)
     {
         $conversation = Conversation::find($id);
         if (!$conversation) {
@@ -70,7 +71,7 @@ class ConversationController extends Controller
         ]);
     }
 
-    public function destroy($id, ConversationService $conversationService)
+    public function destroy($id)
     {
         $conversation = Conversation::find($id);
         if (!$conversation) {
