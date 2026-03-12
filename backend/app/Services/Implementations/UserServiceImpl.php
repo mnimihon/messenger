@@ -1,10 +1,11 @@
 <?php
+
 namespace App\Services\Implementations;
 
 use App\Services\UserService;
 
-class UserServiceImpl implements UserService {
-
+class UserServiceImpl implements UserService
+{
     public function decrementAttempts(int $currentAttempts, int $possibleAttempts): int
     {
         return $possibleAttempts - $currentAttempts;

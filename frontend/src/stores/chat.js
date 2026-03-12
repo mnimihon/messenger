@@ -3,102 +3,77 @@ import { ref } from 'vue'
 import api from '@/api/axios'
 
 export const useChatStore = defineStore('chat', () => {
-    const conversations = ref([])
-    const currentConversation = ref(null)
-    const messages = ref([])
-    const loading = ref(false)
+  const conversations = ref([])
+  const currentConversationId = ref(null)
+  const messages = ref([])
+  const nextCursor = ref(null)
+  const loading = ref(false)
 
-    // Загрузить диалоги
-    async function loadConversations() {
-        loading.value = true
-        try {
-            const response = await api.get('/conversations')
-            conversations.value = response.data
-        } finally {
-            loading.value = false
-        }
+  async function loadConversations() {
+    loading.value = true
+    try {
+      const { data } = await api.get('/conversations')
+      conversations.value = Array.isArray(data.data) ? data.data : []
+    } finally {
+      loading.value = false
     }
+  }
 
-    // Загрузить сообщения диалога
-    async function loadMessages(conversationId) {
-        loading.value = true
-        try {
-            const response = await api.get(`/messages?conversation_id=${conversationId}`)
-            messages.value = response.data.messages.reverse() // новые внизу
-            currentConversation.value = conversationId
-        } finally {
-            loading.value = false
-        }
+  async function loadMessages(conversationId, cursor = 0) {
+    loading.value = true
+    try {
+      const { data } = await api.get('/messages', {
+        params: { conversation_id: conversationId, cursor: cursor || undefined },
+      })
+      const payload = data.data || {}
+      const list = payload.messages || []
+      messages.value = cursor ? [...list, ...messages.value] : [...list].reverse()
+      nextCursor.value = payload.next_cursor
+      currentConversationId.value = conversationId
+    } finally {
+      loading.value = false
     }
+  }
 
-    // Отправить сообщение
-    async function sendMessage(message) {
-        try {
-            const response = await api.post('/messages', {
-                conversation_id: currentConversation.value,
-                message: message
-            })
+  async function sendMessage(text) {
+    const { data } = await api.post('/messages', {
+      conversation_id: currentConversationId.value,
+      message: text,
+    })
+    const msg = data.message
+    messages.value.push(msg)
+    await loadConversations()
+    return msg
+  }
 
-            // Добавляем в список
-            messages.value.push(response.data.message)
-
-            // Обновляем последнее сообщение в диалоге
-            updateConversationLastMessage(response.data.message)
-
-            return response.data.message
-        } catch (error) {
-            console.error('Ошибка отправки:', error)
-            throw error
-        }
+  async function openOrCreateConversation(otherUserId) {
+    const { data, status } = await api.post('/conversations', {
+      other_user_id: otherUserId,
+    })
+    if (status === 201 && data.data) {
+      await loadConversations()
+      return data.data
     }
-
-    // Создать/получить диалог
-    async function getOrCreateConversation(otherUserId) {
-        try {
-            const response = await api.post('/conversations', {
-                other_user_id: otherUserId
-            })
-
-            // Добавляем/обновляем в списке
-            const existingIndex = conversations.value.findIndex(c => c.id === response.data.id)
-            if (existingIndex >= 0) {
-                conversations.value[existingIndex] = response.data
-            } else {
-                conversations.value.unshift(response.data)
-            }
-
-            return response.data
-        } catch (error) {
-            console.error('Ошибка создания диалога:', error)
-            throw error
-        }
+    if (data.success && data.message && !data.data) {
+      await loadConversations()
+      const found = conversations.value.find(
+        (c) => c.other_user?.id === otherUserId
+      )
+      if (found) return found
     }
+    await loadConversations()
+    return conversations.value[0] || null
+  }
 
-    // Обновить последнее сообщение в диалоге
-    function updateConversationLastMessage(message) {
-        const convIndex = conversations.value.findIndex(c => c.id === message.conversation_id)
-        if (convIndex >= 0) {
-            conversations.value[convIndex].last_message = {
-                message: message.message,
-                created_at: message.created_at,
-                is_read: message.is_read
-            }
-            conversations.value[convIndex].updated_at = new Date().toISOString()
-
-            // Перемещаем в начало
-            const conversation = conversations.value.splice(convIndex, 1)[0]
-            conversations.value.unshift(conversation)
-        }
-    }
-
-    return {
-        conversations,
-        currentConversation,
-        messages,
-        loading,
-        loadConversations,
-        loadMessages,
-        sendMessage,
-        getOrCreateConversation
-    }
+  return {
+    conversations,
+    currentConversationId,
+    messages,
+    nextCursor,
+    loading,
+    loadConversations,
+    loadMessages,
+    sendMessage,
+    openOrCreateConversation,
+  }
 })
