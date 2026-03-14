@@ -17,6 +17,7 @@
               class="w-full"
               :invalid="submitAttempted && !!errors.code"
               @blur="validateField('code')"
+              @input="validateField('code')"
             />
           </div>
           <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>

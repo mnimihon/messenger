@@ -10,6 +10,7 @@
             class="w-full"
             :invalid="submitAttempted && !!errors.name"
             @blur="validateField('name')"
+            @input="validateField('name')"
           />
           <InputText
             v-model="email"
@@ -18,6 +19,7 @@
             class="w-full"
             :invalid="submitAttempted && !!errors.email"
             @blur="validateField('email')"
+            @input="validateField('email')"
           />
           <Password
             v-model="password"
@@ -28,6 +30,7 @@
             :feedback="false"
             :invalid="submitAttempted && !!errors.password"
             @blur="validateField('password')"
+            @input="validateField('password')"
           />
           <Password
             v-model="passwordConfirmation"
@@ -38,6 +41,7 @@
             :feedback="false"
             :invalid="submitAttempted && !!errors.passwordConfirmation"
             @blur="validateField('passwordConfirmation')"
+            @input="validateField('passwordConfirmation')"
           />
           <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
           <Button

@@ -12,6 +12,7 @@
             class="w-full"
             :invalid="submitAttempted && !!errors.email"
             @blur="validateField('email')"
+            @input="validateField('email')"
           />
           <Message v-if="message" :severity="ok ? 'success' : 'error'" :closable="false">
             {{ message }}

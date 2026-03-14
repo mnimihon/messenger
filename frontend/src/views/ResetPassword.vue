@@ -11,6 +11,7 @@
             class="w-full"
             :invalid="submitAttempted && !!errors.email"
             @blur="validateField('email')"
+            @input="validateField('email')"
           />
           <InputText
             v-model="code"
@@ -19,6 +20,7 @@
             maxlength="6"
             :invalid="submitAttempted && !!errors.code"
             @blur="validateField('code')"
+            @input="validateField('code')"
           />
           <Password
             v-model="password"
@@ -29,6 +31,7 @@
             :feedback="false"
             :invalid="submitAttempted && !!errors.password"
             @blur="validateField('password')"
+            @input="validateField('password')"
           />
           <Password
             v-model="passwordConfirmation"
@@ -39,6 +42,7 @@
             :feedback="false"
             :invalid="submitAttempted && !!errors.passwordConfirmation"
             @blur="validateField('passwordConfirmation')"
+            @input="validateField('passwordConfirmation')"
           />
           <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
 

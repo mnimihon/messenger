@@ -11,6 +11,7 @@
             class="w-full"
             :invalid="submitAttempted && !!errors.email"
             @blur="validateField('email')"
+            @input="validateField('email')"
           />
           <Password
             v-model="password"
@@ -21,6 +22,7 @@
             :feedback="false"
             :invalid="submitAttempted && !!errors.password"
             @blur="validateField('password')"
+            @input="validateField('password')"
           />
           <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
           <Button type="submit" label="Войти" :loading="loading" class="w-full" />

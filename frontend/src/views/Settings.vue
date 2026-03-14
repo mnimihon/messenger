@@ -11,6 +11,7 @@
               class="w-full"
               :invalid="nameSubmitAttempted && !!errors.name"
               @blur="validateField('name')"
+              @input="validateField('name')"
             />
             <Button type="submit" label="Сохранить имя" :loading="nameLoading" />
           </form>
@@ -29,6 +30,7 @@
               :feedback="false"
               :invalid="passwordSubmitAttempted && !!errors.currentPassword"
               @blur="validateField('currentPassword')"
+              @input="validateField('currentPassword')"
             />
             <Password
               v-model="newPassword"
@@ -39,6 +41,7 @@
               :feedback="false"
               :invalid="passwordSubmitAttempted && !!errors.newPassword"
               @blur="validateField('newPassword')"
+              @input="validateField('newPassword')"
             />
             <Password
               v-model="newPasswordConfirmation"
@@ -49,6 +52,7 @@
               :feedback="false"
               :invalid="passwordSubmitAttempted && !!errors.newPasswordConfirmation"
               @blur="validateField('newPasswordConfirmation')"
+              @input="validateField('newPasswordConfirmation')"
             />
             <Button type="submit" label="Сменить пароль" :loading="passLoading" />
           </form>
@@ -69,6 +73,7 @@
             :feedback="false"
             :invalid="deleteSubmitAttempted && !!errors.deletePassword"
             @blur="validateField('deletePassword')"
+            @input="validateField('deletePassword')"
           />
           <Button label="Удалить аккаунт" severity="danger" :loading="deleteLoading" @click="deleteAccount" />
         </template>
