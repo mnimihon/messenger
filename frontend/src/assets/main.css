@@ -1,3 +1,32 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Primary color: #2285e0 (app-wide) */
+:root {
+  --p-primary-50: #e8f2fd;
+  --p-primary-100: #d1e5fb;
+  --p-primary-200: #a3cbf7;
+  --p-primary-300: #75b1f3;
+  --p-primary-400: #4797ef;
+  --p-primary-500: #2285e0;
+  --p-primary-600: #1c6bb4;
+  --p-primary-700: #165187;
+  --p-primary-800: #10385b;
+  --p-primary-900: #0a202e;
+  --p-primary-950: #051017;
+}
+
+/* PrimeVue Password: input same width as InputText (root gets w-full, inner input must fill) */
+.p-password,
+[data-pc-name="password"] {
+  width: 100%;
+  display: flex;
+}
+.p-password input,
+[data-pc-name="password"] input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}

@@ -6,8 +6,8 @@
         <form class="flex flex-col gap-4" @submit.prevent="submit">
           <InputText v-model="name" placeholder="Имя" class="w-full" />
           <InputText v-model="email" type="email" placeholder="Email" class="w-full" />
-          <Password v-model="password" placeholder="Пароль" class="w-full" toggle-mask />
-          <Password v-model="passwordConfirmation" placeholder="Повтор пароля" class="w-full" toggle-mask :feedback="false" />
+          <Password v-model="password" placeholder="Пароль" class="w-full" input-class="w-full" :toggle-mask="false" :feedback="false" />
+          <Password v-model="passwordConfirmation" placeholder="Повтор пароля" class="w-full" input-class="w-full" :toggle-mask="false" :feedback="false" />
           <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
           <Button
             type="submit"
@@ -16,7 +16,7 @@
             :disabled="password !== passwordConfirmation"
             class="w-full"
           />
-          <RouterLink to="/login" class="text-center text-sm text-primary">Уже есть аккаунт</RouterLink>
+          <Button label="Уже есть аккаунт" outlined class="w-full" @click="router.push('/login')" />
         </form>
       </template>
     </Card>

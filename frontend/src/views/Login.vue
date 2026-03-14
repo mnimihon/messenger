@@ -5,12 +5,12 @@
       <template #content>
         <form class="flex flex-col gap-4" @submit.prevent="submit">
           <InputText v-model="email" type="email" placeholder="Email" class="w-full" />
-          <Password v-model="password" placeholder="Пароль" class="w-full" toggle-mask :feedback="false" />
+          <Password v-model="password" placeholder="Пароль" class="w-full" input-class="w-full" :toggle-mask="false" :feedback="false" />
           <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
           <Button type="submit" label="Войти" :loading="loading" class="w-full" />
-          <div class="flex flex-col gap-2 text-sm text-center">
-            <RouterLink to="/register" class="text-primary">Регистрация</RouterLink>
-            <RouterLink to="/forgot-password" class="text-slate-600">Забыли пароль?</RouterLink>
+          <div class="flex flex-col gap-2">
+            <Button label="Регистрация" outlined class="w-full" @click="router.push('/register')" />
+            <Button label="Забыли пароль?" severity="secondary" outlined class="w-full" @click="router.push('/forgot-password')" />
           </div>
         </form>
       </template>

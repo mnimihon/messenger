@@ -15,9 +15,9 @@
         <template #title>Смена пароля</template>
         <template #content>
           <form class="flex flex-col gap-3" @submit.prevent="savePassword">
-            <Password v-model="currentPassword" placeholder="Текущий пароль" class="w-full" toggle-mask :feedback="false" />
-            <Password v-model="newPassword" placeholder="Новый пароль" class="w-full" toggle-mask />
-            <Password v-model="newPasswordConfirmation" placeholder="Повтор нового" class="w-full" toggle-mask :feedback="false" />
+            <Password v-model="currentPassword" placeholder="Текущий пароль" class="w-full" input-class="w-full" :toggle-mask="false" :feedback="false" />
+            <Password v-model="newPassword" placeholder="Новый пароль" class="w-full" input-class="w-full" :toggle-mask="false" :feedback="false" />
+            <Password v-model="newPasswordConfirmation" placeholder="Повтор нового" class="w-full" input-class="w-full" :toggle-mask="false" :feedback="false" />
             <Button type="submit" label="Сменить пароль" :loading="passLoading" />
           </form>
           <Message v-if="passMsg" :severity="passOk ? 'success' : 'error'" class="mt-2" :closable="false">
@@ -28,7 +28,7 @@
       <Card>
         <template #title>Удаление аккаунта</template>
         <template #content>
-          <Password v-model="deletePassword" placeholder="Пароль для подтверждения" class="w-full mb-2" toggle-mask :feedback="false" />
+          <Password v-model="deletePassword" placeholder="Пароль для подтверждения" class="w-full mb-2" input-class="w-full" :toggle-mask="false" :feedback="false" />
           <Button label="Удалить аккаунт" severity="danger" :loading="deleteLoading" @click="deleteAccount" />
         </template>
       </Card>

@@ -3,7 +3,7 @@
     <div class="container mx-auto flex items-center justify-between">
       <!-- Логотип -->
       <router-link to="/" class="flex items-center space-x-2">
-        <i class="pi pi-comments text-blue-400 text-xl"></i>
+        <i class="pi pi-comments text-primary text-xl"></i>
         <span class="text-white font-bold text-lg">Messenger</span>
       </router-link>
 
@@ -19,7 +19,7 @@
           </router-link>
           <router-link
               to="/register"
-              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              class="bg-primary hover:bg-primary-600 text-primary-contrast px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
             Регистрация
           </router-link>

@@ -4,13 +4,59 @@
       <template #title>Новый пароль</template>
       <template #content>
         <form class="flex flex-col gap-4" @submit.prevent="submit">
-          <InputText v-model="email" type="email" placeholder="Email" class="w-full" />
-          <InputText v-model="code" placeholder="Код из письма" class="w-full" />
-          <Password v-model="password" placeholder="Новый пароль" class="w-full" toggle-mask :feedback="false" />
-          <Password v-model="passwordConfirmation" placeholder="Повтор пароля" class="w-full" toggle-mask :feedback="false" />
+          <InputText
+            v-model="email"
+            type="email"
+            placeholder="Email"
+            class="w-full"
+            :invalid="!!errors.email"
+            @blur="validateField('email')"
+          />
+          <InputText
+            v-model="code"
+            placeholder="Код из письма"
+            class="w-full"
+            maxlength="6"
+            :invalid="!!errors.code"
+            @blur="validateField('code')"
+          />
+          <Password
+            v-model="password"
+            placeholder="Новый пароль"
+            class="w-full"
+            input-class="w-full"
+            :toggle-mask="false"
+            :feedback="false"
+            :invalid="!!errors.password"
+            @blur="validateField('password')"
+          />
+          <Password
+            v-model="passwordConfirmation"
+            placeholder="Повтор пароля"
+            class="w-full"
+            input-class="w-full"
+            :toggle-mask="false"
+            :feedback="false"
+            :invalid="!!errors.passwordConfirmation"
+            @blur="validateField('passwordConfirmation')"
+          />
           <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
+
+          <p v-if="resendCooldown > 0" class="text-sm text-slate-600">
+            Запросить новый код через: <strong>{{ resendCooldown }}</strong> сек
+          </p>
+          <Button
+            v-else
+            type="button"
+            label="Отправить код"
+            severity="secondary"
+            outlined
+            class="w-full"
+            :loading="resendLoading"
+            @click="resendCode"
+          />
+
           <Button type="submit" label="Сохранить" :loading="loading" class="w-full" />
-          <RouterLink to="/login" class="text-center text-sm text-primary">Вход</RouterLink>
         </form>
       </template>
     </Card>
@@ -18,7 +64,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Card from 'primevue/card'
 import InputText from 'primevue/inputtext'
@@ -27,6 +73,8 @@ import Button from 'primevue/button'
 import Message from 'primevue/message'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/api/axios'
+
+const RESEND_COOLDOWN_SEC = 60
 
 const route = useRoute()
 const router = useRouter()
@@ -38,22 +86,90 @@ const password = ref('')
 const passwordConfirmation = ref('')
 const loading = ref(false)
 const error = ref('')
+const errors = ref({
+  email: '',
+  code: '',
+  password: '',
+  passwordConfirmation: ''
+})
+const resendCooldown = ref(RESEND_COOLDOWN_SEC)
+const resendLoading = ref(false)
+let cooldownTimer = null
+
+function validateField(name) {
+  const v = { email: email.value.trim(), code: code.value.trim(), password: password.value, passwordConfirmation: passwordConfirmation.value }
+  if (name === 'email') {
+    errors.value.email = !v.email ? 'Введите email' : ''
+  } else if (name === 'code') {
+    errors.value.code = !v.code ? 'Введите код из письма' : (v.code.length !== 6 ? 'Код должен быть 6 цифр' : '')
+  } else if (name === 'password') {
+    errors.value.password = !v.password ? 'Введите новый пароль' : ''
+  } else if (name === 'passwordConfirmation') {
+    errors.value.passwordConfirmation = !v.passwordConfirmation ? 'Повторите пароль' : (v.password !== v.passwordConfirmation ? 'Пароли не совпадают' : '')
+  }
+}
+
+function validateAll() {
+  validateField('email')
+  validateField('code')
+  validateField('password')
+  validateField('passwordConfirmation')
+  return !errors.value.email && !errors.value.code && !errors.value.password && !errors.value.passwordConfirmation
+}
+
+function startCooldown(seconds = RESEND_COOLDOWN_SEC) {
+  resendCooldown.value = seconds
+  if (cooldownTimer) clearInterval(cooldownTimer)
+  cooldownTimer = setInterval(() => {
+    resendCooldown.value--
+    if (resendCooldown.value <= 0) clearInterval(cooldownTimer)
+  }, 1000)
+}
+
+async function resendCode() {
+  if (resendCooldown.value > 0) return
+  const e = email.value.trim()
+  if (!e) {
+    errors.value.email = 'Введите email'
+    return
+  }
+  resendLoading.value = true
+  error.value = ''
+  try {
+    const { data } = await api.post('/forgot-password', { email: e })
+    if (data.message) {
+      startCooldown(data.can_resend_after ?? RESEND_COOLDOWN_SEC)
+    }
+  } catch (err) {
+    const d = err.response?.data
+    error.value = d?.message || 'Не удалось отправить код'
+    if (d?.can_resend_after != null) startCooldown(d.can_resend_after)
+  } finally {
+    resendLoading.value = false
+  }
+}
 
 onMounted(() => {
   if (!email.value && route.query.email) email.value = route.query.email
+  startCooldown(RESEND_COOLDOWN_SEC)
+})
+
+onUnmounted(() => {
+  if (cooldownTimer) clearInterval(cooldownTimer)
 })
 
 async function submit() {
   error.value = ''
+  if (!validateAll()) return
   if (password.value !== passwordConfirmation.value) {
-    error.value = 'Пароли не совпадают'
+    errors.value.passwordConfirmation = 'Пароли не совпадают'
     return
   }
   loading.value = true
   try {
     const { data } = await api.post('/reset-password', {
-      email: email.value,
-      code: code.value,
+      email: email.value.trim(),
+      code: code.value.trim(),
       password: password.value,
       password_confirmation: passwordConfirmation.value,
     })
