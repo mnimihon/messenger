@@ -1,6 +1,6 @@
 <template>
-  <div class="min-h-screen bg-slate-50 p-4">
-    <div class="max-w-lg mx-auto flex flex-col gap-4">
+  <div class="min-h-screen bg-slate-50 p-3 sm:p-4 md:p-6">
+    <div class="max-w-lg mx-auto flex flex-col gap-4 w-full min-w-0">
       <Card>
         <template #title>Профиль</template>
         <template #content>
@@ -32,7 +32,7 @@
           <Button label="Удалить аккаунт" severity="danger" :loading="deleteLoading" @click="deleteAccount" />
         </template>
       </Card>
-      <Button label="Назад в чат" severity="secondary" outlined @click="$router.push('/')" />
+      <Button label="Назад в чат" severity="secondary" outlined class="w-full sm:w-auto" @click="$router.push('/')" />
     </div>
   </div>
 </template>

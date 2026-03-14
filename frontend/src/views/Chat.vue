@@ -1,8 +1,11 @@
 <template>
-  <div class="flex h-screen bg-slate-100">
-    <aside class="w-80 border-r bg-white flex flex-col shrink-0">
-      <div class="p-3 border-b flex items-center justify-between">
-        <span class="font-semibold">Диалоги</span>
+  <div class="flex h-screen max-h-screen overflow-hidden bg-slate-100">
+    <aside
+      class="flex flex-col w-full md:w-80 shrink-0 border-r bg-white transition-all duration-200"
+      :class="{ 'hidden md:!flex': mobileView === 'chat' }"
+    >
+      <div class="p-3 border-b flex items-center justify-between shrink-0">
+        <span class="font-semibold text-base sm:text-lg">Диалоги</span>
         <div class="flex gap-1">
           <Button icon="pi pi-image" text rounded severity="secondary" title="Фото" @click="$router.push('/photos')" />
           <Button icon="pi pi-cog" text rounded severity="secondary" title="Настройки" @click="$router.push('/settings')" />
@@ -13,7 +16,7 @@
         <div
           v-for="c in chat.conversations"
           :key="c.id"
-          class="p-3 border-b cursor-pointer hover:bg-slate-50 flex items-center gap-2"
+          class="p-2.5 sm:p-3 border-b cursor-pointer hover:bg-slate-50 flex items-center gap-2 min-w-0"
           :class="{ 'bg-slate-100': chat.currentConversationId === c.id }"
           @click="openConversation(c)"
         >
@@ -41,9 +44,21 @@
         </div>
       </div>
     </aside>
-    <main class="flex-1 flex flex-col min-w-0">
+    <main
+      class="flex-1 flex flex-col min-w-0 min-h-0 w-full"
+      :class="{ 'hidden md:!flex': mobileView === 'list' }"
+    >
       <template v-if="chat.currentConversationId">
-        <div class="p-3 border-b bg-white flex items-center gap-2">
+        <div class="p-3 border-b bg-white flex items-center gap-2 shrink-0">
+          <Button
+            icon="pi pi-arrow-left"
+            text
+            rounded
+            severity="secondary"
+            class="md:hidden shrink-0"
+            aria-label="Назад к диалогам"
+            @click="mobileView = 'list'"
+          />
           <div
             class="shrink-0 cursor-pointer rounded-full overflow-hidden ring-2 ring-transparent hover:ring-primary/30"
             @click="openGallery(chat.currentConversationId)"
@@ -55,9 +70,9 @@
               size="normal"
             />
           </div>
-          <span class="font-medium">{{ activeOtherName }}</span>
+          <span class="font-medium truncate flex-1 min-w-0">{{ activeOtherName }}</span>
         </div>
-        <div ref="scrollRef" class="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
+        <div ref="scrollRef" class="flex-1 overflow-y-auto p-3 sm:p-4 flex flex-col gap-2 min-h-0">
           <div
             v-for="m in chat.messages"
             :key="m.id"
@@ -65,7 +80,7 @@
             :class="m.sender?.id === auth.user?.id ? 'justify-end' : 'justify-start'"
           >
             <div
-              class="max-w-[70%] rounded-lg px-3 py-2"
+              class="max-w-[85%] sm:max-w-[70%] rounded-lg px-3 py-2 break-words"
               :class="m.sender?.id === auth.user?.id ? 'bg-primary text-primary-contrast' : 'bg-white border'"
             >
               <div class="text-sm">{{ m.message }}</div>
@@ -73,17 +88,17 @@
             </div>
           </div>
         </div>
-        <div class="p-3 border-t bg-white flex gap-2">
+        <div class="p-2 sm:p-3 border-t bg-white flex gap-2 shrink-0">
           <InputText
             v-model="draft"
-            class="flex-1"
+            class="flex-1 min-w-0"
             placeholder="Сообщение..."
             @keyup.enter="send"
           />
-          <Button icon="pi pi-send" @click="send" :disabled="!draft.trim()" />
+          <Button icon="pi pi-send" @click="send" :disabled="!draft.trim()" class="shrink-0" />
         </div>
       </template>
-      <div v-else class="flex-1 flex items-center justify-center text-slate-500">
+      <div v-else class="flex-1 flex items-center justify-center text-slate-500 p-4 text-center text-sm sm:text-base">
         Выберите диалог
       </div>
     </main>
@@ -92,7 +107,7 @@
       v-model:visible="galleryVisible"
       modal
       :header="galleryTitle"
-      :style="{ width: '90vw', maxWidth: '600px' }"
+      :style="{ width: '95vw', maxWidth: '600px' }"
       :dismissable-mask="true"
       @hide="galleryPhotos = []"
     >
@@ -149,6 +164,7 @@ const galleryVisible = ref(false)
 const galleryPhotos = ref([])
 const galleryIndex = ref(0)
 const galleryUserName = ref('')
+const mobileView = ref('list')
 
 const activeOther = computed(() => {
   const c = chat.conversations.find((x) => x.id === chat.currentConversationId)
@@ -212,6 +228,7 @@ function setupConversationChannels() {
 async function openConversation(c) {
   await chat.loadMessages(c.id)
   chat.clearConversationUnread(c.id)
+  mobileView.value = 'chat'
   nextTick(scrollBottom)
 }
 

@@ -1,18 +1,18 @@
 <template>
-  <div class="min-h-screen bg-slate-50 p-4">
-    <div class="max-w-2xl mx-auto">
+  <div class="min-h-screen bg-slate-50 p-3 sm:p-4 md:p-6">
+    <div class="max-w-2xl mx-auto w-full">
       <Card>
         <template #title>Фотографии профиля</template>
         <template #subtitle>Загрузите несколько фото (до 10 за раз). Главное фото отображается в аватарке.</template>
         <template #content>
-          <div class="flex flex-wrap gap-4 mb-4">
+          <div class="flex flex-wrap gap-3 sm:gap-4 mb-4">
             <div
               v-for="p in photos"
               :key="p.id"
-              class="relative w-28 h-28 rounded-lg overflow-hidden border bg-slate-100 flex flex-col"
+              class="relative w-20 h-20 sm:w-28 sm:h-28 rounded-lg overflow-hidden border bg-slate-100 flex flex-col shrink-0"
             >
-              <img :src="p.url" alt="" class="w-full h-20 object-cover" />
-              <div class="flex-1 flex items-center justify-center gap-1 p-1 bg-white">
+              <img :src="p.url" alt="" class="w-full h-14 sm:h-20 object-cover" />
+              <div class="flex-1 flex items-center justify-center gap-1 p-0.5 sm:p-1 bg-white min-h-0">
                 <Badge v-if="p.is_main" value="Главное" severity="success" class="text-xs" />
                 <Button
                   v-else
@@ -36,13 +36,13 @@
             choose-label="Выбрать одно или несколько фото"
             @select="onSelect"
           />
-          <p class="text-sm text-slate-500 mt-1">Максимум 10 фото за раз, до 2 МБ каждое</p>
+          <p class="text-xs sm:text-sm text-slate-500 mt-1">Максимум 10 фото за раз, до 2 МБ каждое</p>
           <Message v-if="msg" :severity="msgOk ? 'success' : 'error'" class="mt-4" :closable="false">
             {{ msg }}
           </Message>
-          <div class="flex gap-2 mt-6">
-            <Button label="В чат" icon="pi pi-comments" @click="goChat" />
-            <Button label="Настройки" severity="secondary" outlined @click="$router.push('/settings')" />
+          <div class="flex flex-wrap gap-2 mt-6">
+            <Button label="В чат" icon="pi pi-comments" @click="goChat" class="flex-1 sm:flex-initial min-w-0" />
+            <Button label="Настройки" severity="secondary" outlined class="flex-1 sm:flex-initial min-w-0" @click="$router.push('/settings')" />
           </div>
         </template>
       </Card>
