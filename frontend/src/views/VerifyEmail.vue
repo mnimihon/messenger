@@ -15,6 +15,8 @@
               maxlength="6"
               placeholder="000000"
               class="w-full"
+              :invalid="submitAttempted && !!errors.code"
+              @blur="validateField('code')"
             />
           </div>
           <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
@@ -52,6 +54,17 @@ const code = ref('')
 const loading = ref(false)
 const resendLoading = ref(false)
 const error = ref('')
+const errors = ref({ code: '' })
+const submitAttempted = ref(false)
+
+function validateField(field) {
+  if (field === 'code') errors.value.code = !code.value.trim() ? ' ' : (code.value.length !== 6 ? ' ' : '')
+}
+
+function validateAll() {
+  validateField('code')
+  return !errors.value.code
+}
 
 onMounted(() => {
   if (!email.value) {
@@ -61,6 +74,8 @@ onMounted(() => {
 
 async function submit() {
   error.value = ''
+  submitAttempted.value = true
+  if (!validateAll()) return
   if (!code.value || code.value.length !== 6) {
     error.value = 'Введите 6-значный код'
     return

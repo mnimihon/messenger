@@ -9,7 +9,7 @@
             type="email"
             placeholder="Email"
             class="w-full"
-            :invalid="!!errors.email"
+            :invalid="submitAttempted && !!errors.email"
             @blur="validateField('email')"
           />
           <InputText
@@ -17,7 +17,7 @@
             placeholder="Код из письма"
             class="w-full"
             maxlength="6"
-            :invalid="!!errors.code"
+            :invalid="submitAttempted && !!errors.code"
             @blur="validateField('code')"
           />
           <Password
@@ -27,7 +27,7 @@
             input-class="w-full"
             :toggle-mask="false"
             :feedback="false"
-            :invalid="!!errors.password"
+            :invalid="submitAttempted && !!errors.password"
             @blur="validateField('password')"
           />
           <Password
@@ -37,7 +37,7 @@
             input-class="w-full"
             :toggle-mask="false"
             :feedback="false"
-            :invalid="!!errors.passwordConfirmation"
+            :invalid="submitAttempted && !!errors.passwordConfirmation"
             @blur="validateField('passwordConfirmation')"
           />
           <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
@@ -94,6 +94,7 @@ const errors = ref({
 })
 const resendCooldown = ref(RESEND_COOLDOWN_SEC)
 const resendLoading = ref(false)
+const submitAttempted = ref(false)
 let cooldownTimer = null
 
 function validateField(name) {
@@ -160,6 +161,7 @@ onUnmounted(() => {
 
 async function submit() {
   error.value = ''
+  submitAttempted.value = true
   if (!validateAll()) return
   if (password.value !== passwordConfirmation.value) {
     errors.value.passwordConfirmation = 'Пароли не совпадают'

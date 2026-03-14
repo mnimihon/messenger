@@ -6,7 +6,12 @@
         <template #content>
           <form class="flex flex-col gap-3" @submit.prevent="saveName">
             <label class="text-sm font-medium">Имя</label>
-            <InputText v-model="name" class="w-full" />
+            <InputText
+              v-model="name"
+              class="w-full"
+              :invalid="nameSubmitAttempted && !!errors.name"
+              @blur="validateField('name')"
+            />
             <Button type="submit" label="Сохранить имя" :loading="nameLoading" />
           </form>
         </template>
@@ -15,9 +20,36 @@
         <template #title>Смена пароля</template>
         <template #content>
           <form class="flex flex-col gap-3" @submit.prevent="savePassword">
-            <Password v-model="currentPassword" placeholder="Текущий пароль" class="w-full" input-class="w-full" :toggle-mask="false" :feedback="false" />
-            <Password v-model="newPassword" placeholder="Новый пароль" class="w-full" input-class="w-full" :toggle-mask="false" :feedback="false" />
-            <Password v-model="newPasswordConfirmation" placeholder="Повтор нового" class="w-full" input-class="w-full" :toggle-mask="false" :feedback="false" />
+            <Password
+              v-model="currentPassword"
+              placeholder="Текущий пароль"
+              class="w-full"
+              input-class="w-full"
+              :toggle-mask="false"
+              :feedback="false"
+              :invalid="passwordSubmitAttempted && !!errors.currentPassword"
+              @blur="validateField('currentPassword')"
+            />
+            <Password
+              v-model="newPassword"
+              placeholder="Новый пароль"
+              class="w-full"
+              input-class="w-full"
+              :toggle-mask="false"
+              :feedback="false"
+              :invalid="passwordSubmitAttempted && !!errors.newPassword"
+              @blur="validateField('newPassword')"
+            />
+            <Password
+              v-model="newPasswordConfirmation"
+              placeholder="Повтор нового"
+              class="w-full"
+              input-class="w-full"
+              :toggle-mask="false"
+              :feedback="false"
+              :invalid="passwordSubmitAttempted && !!errors.newPasswordConfirmation"
+              @blur="validateField('newPasswordConfirmation')"
+            />
             <Button type="submit" label="Сменить пароль" :loading="passLoading" />
           </form>
           <Message v-if="passMsg" :severity="passOk ? 'success' : 'error'" class="mt-2" :closable="false">
@@ -28,7 +60,16 @@
       <Card>
         <template #title>Удаление аккаунта</template>
         <template #content>
-          <Password v-model="deletePassword" placeholder="Пароль для подтверждения" class="w-full mb-2" input-class="w-full" :toggle-mask="false" :feedback="false" />
+          <Password
+            v-model="deletePassword"
+            placeholder="Пароль для подтверждения"
+            class="w-full mb-2"
+            input-class="w-full"
+            :toggle-mask="false"
+            :feedback="false"
+            :invalid="deleteSubmitAttempted && !!errors.deletePassword"
+            @blur="validateField('deletePassword')"
+          />
           <Button label="Удалить аккаунт" severity="danger" :loading="deleteLoading" @click="deleteAccount" />
         </template>
       </Card>
@@ -61,6 +102,24 @@ const passMsg = ref('')
 const passOk = ref(false)
 const deletePassword = ref('')
 const deleteLoading = ref(false)
+const errors = ref({
+  name: '',
+  currentPassword: '',
+  newPassword: '',
+  newPasswordConfirmation: '',
+  deletePassword: ''
+})
+const nameSubmitAttempted = ref(false)
+const passwordSubmitAttempted = ref(false)
+const deleteSubmitAttempted = ref(false)
+
+function validateField(field) {
+  if (field === 'name') errors.value.name = !name.value.trim() ? ' ' : ''
+  if (field === 'currentPassword') errors.value.currentPassword = !currentPassword.value ? ' ' : ''
+  if (field === 'newPassword') errors.value.newPassword = !newPassword.value ? ' ' : ''
+  if (field === 'newPasswordConfirmation') errors.value.newPasswordConfirmation = !newPasswordConfirmation.value ? ' ' : (newPassword.value !== newPasswordConfirmation.value ? ' ' : '')
+  if (field === 'deletePassword') errors.value.deletePassword = !deletePassword.value ? ' ' : ''
+}
 
 onMounted(async () => {
   try {
@@ -73,6 +132,9 @@ onMounted(async () => {
 })
 
 async function saveName() {
+  nameSubmitAttempted.value = true
+  validateField('name')
+  if (errors.value.name) return
   nameLoading.value = true
   try {
     await api.put('/profile/name', { name: name.value })
@@ -83,6 +145,12 @@ async function saveName() {
 
 async function savePassword() {
   passMsg.value = ''
+  passwordSubmitAttempted.value = true
+  validateField('currentPassword')
+  validateField('newPassword')
+  validateField('newPasswordConfirmation')
+  if (errors.value.currentPassword || errors.value.newPassword || errors.value.newPasswordConfirmation) return
+  if (newPassword.value !== newPasswordConfirmation.value) return
   passLoading.value = true
   try {
     await api.put('/profile/password', {
@@ -101,6 +169,9 @@ async function savePassword() {
 }
 
 async function deleteAccount() {
+  deleteSubmitAttempted.value = true
+  validateField('deletePassword')
+  if (errors.value.deletePassword) return
   deleteLoading.value = true
   try {
     await api.delete('/profile/delete_account', { data: { password: deletePassword.value } })

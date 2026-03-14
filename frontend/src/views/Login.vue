@@ -4,8 +4,24 @@
       <template #title>Вход</template>
       <template #content>
         <form class="flex flex-col gap-4" @submit.prevent="submit">
-          <InputText v-model="email" type="email" placeholder="Email" class="w-full" />
-          <Password v-model="password" placeholder="Пароль" class="w-full" input-class="w-full" :toggle-mask="false" :feedback="false" />
+          <InputText
+            v-model="email"
+            type="email"
+            placeholder="Email"
+            class="w-full"
+            :invalid="submitAttempted && !!errors.email"
+            @blur="validateField('email')"
+          />
+          <Password
+            v-model="password"
+            placeholder="Пароль"
+            class="w-full"
+            input-class="w-full"
+            :toggle-mask="false"
+            :feedback="false"
+            :invalid="submitAttempted && !!errors.password"
+            @blur="validateField('password')"
+          />
           <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
           <Button type="submit" label="Войти" :loading="loading" class="w-full" />
           <div class="flex flex-col gap-2">
@@ -36,8 +52,23 @@ const email = ref('')
 const password = ref('')
 const loading = ref(false)
 const error = ref('')
+const errors = ref({ email: '', password: '' })
+const submitAttempted = ref(false)
+
+function validateField(name) {
+  if (name === 'email') errors.value.email = !email.value.trim() ? ' ' : ''
+  if (name === 'password') errors.value.password = !password.value ? ' ' : ''
+}
+
+function validateAll() {
+  validateField('email')
+  validateField('password')
+  return !errors.value.email && !errors.value.password
+}
 
 async function submit() {
+  submitAttempted.value = true
+  if (!validateAll()) return
   error.value = ''
   loading.value = true
   try {

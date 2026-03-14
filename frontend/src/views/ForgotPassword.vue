@@ -5,7 +5,14 @@
       <template #subtitle>Укажите email — отправим код</template>
       <template #content>
         <form class="flex flex-col gap-4" @submit.prevent="submit">
-          <InputText v-model="email" type="email" placeholder="Email" class="w-full" />
+          <InputText
+            v-model="email"
+            type="email"
+            placeholder="Email"
+            class="w-full"
+            :invalid="submitAttempted && !!errors.email"
+            @blur="validateField('email')"
+          />
           <Message v-if="message" :severity="ok ? 'success' : 'error'" :closable="false">
             {{ message }}
           </Message>
@@ -31,14 +38,27 @@ const email = ref('')
 const loading = ref(false)
 const message = ref('')
 const ok = ref(false)
+const errors = ref({ email: '' })
+const submitAttempted = ref(false)
+
+function validateField(field) {
+  if (field === 'email') errors.value.email = !email.value.trim() ? ' ' : ''
+}
+
+function validateAll() {
+  validateField('email')
+  return !errors.value.email
+}
 
 async function submit() {
+  submitAttempted.value = true
+  if (!validateAll()) return
   loading.value = true
   message.value = ''
   try {
     await api.post('/forgot-password', { email: email.value })
     ok.value = true
-    message.value = 'Код отправлен на почту.'
+    message.value = 'Если аккаунт существует, код отправлен на почту.'
     setTimeout(() => router.push({ name: 'reset-password', query: { email: email.value } }), 1500)
   } catch (e) {
     message.value = e.response?.data?.message || 'Ошибка'

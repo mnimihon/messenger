@@ -30,3 +30,41 @@
   width: 100%;
   box-sizing: border-box;
 }
+
+/* Красная рамка для невалидных полей во всех формах */
+.p-inputtext.p-invalid,
+.p-inputtext[aria-invalid="true"] {
+  border-color: #e24c4c;
+}
+.p-password.p-invalid .p-inputtext,
+.p-password.p-invalid input,
+.p-password input[aria-invalid="true"] {
+  border-color: #e24c4c;
+}
+
+/* Невалидное поле: красная рамка при hover и focus, толщина не меняется */
+.p-inputtext.p-invalid:hover,
+.p-inputtext.p-invalid:focus,
+.p-inputtext.p-invalid:focus-visible,
+.p-inputtext[aria-invalid="true"]:hover,
+.p-inputtext[aria-invalid="true"]:focus,
+.p-inputtext[aria-invalid="true"]:focus-visible {
+  border-color: #e24c4c !important;
+  border-width: 1px !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+.p-password.p-invalid .p-inputtext:hover,
+.p-password.p-invalid .p-inputtext:focus,
+.p-password.p-invalid .p-inputtext:focus-visible,
+.p-password.p-invalid input:hover,
+.p-password.p-invalid input:focus,
+.p-password.p-invalid input:focus-visible,
+.p-password input[aria-invalid="true"]:hover,
+.p-password input[aria-invalid="true"]:focus,
+.p-password input[aria-invalid="true"]:focus-visible {
+  border-color: #e24c4c !important;
+  border-width: 1px !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
