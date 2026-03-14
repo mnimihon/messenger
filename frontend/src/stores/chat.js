@@ -41,7 +41,10 @@ export const useChatStore = defineStore('chat', () => {
       message: text,
     })
     const msg = data.message
-    messages.value.push(msg)
+    const exists = messages.value.some((m) => m.id === msg.id)
+    if (!exists) {
+      messages.value.push(msg)
+    }
     await loadConversations()
     return msg
   }
