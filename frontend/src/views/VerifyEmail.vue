@@ -1,9 +1,8 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-slate-50 p-3 sm:p-4 md:p-6">
     <Card class="w-full max-w-md shadow-md mx-2 sm:mx-0">
-      <template #title>Подтверждение email</template>
-      <template #subtitle>
-        Введите код из письма на {{ email }}
+      <template #title>
+        <span class="block text-center">Подтверждение email</span>
       </template>
       <template #content>
         <form class="flex flex-col gap-4" @submit.prevent="submit">
@@ -21,8 +20,12 @@
             />
           </div>
           <Message v-if="error" severity="error" :closable="false">{{ error }}</Message>
-          <Button type="submit" label="Подтвердить" :loading="loading" class="w-full" />
+
+          <p v-if="resendCooldown > 0" class="text-sm text-slate-600 text-center">
+            Запросить новый код через: <strong>{{ resendCooldown }}</strong> сек
+          </p>
           <Button
+            v-else
             type="button"
             label="Отправить код снова"
             severity="secondary"
@@ -31,6 +34,8 @@
             :loading="resendLoading"
             @click="resend"
           />
+
+          <Button type="submit" label="Подтвердить" :loading="loading" class="w-full" />
         </form>
       </template>
     </Card>
@@ -38,7 +43,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Card from 'primevue/card'
 import InputText from 'primevue/inputtext'
@@ -57,6 +62,18 @@ const resendLoading = ref(false)
 const error = ref('')
 const errors = ref({ code: '' })
 const submitAttempted = ref(false)
+const RESEND_COOLDOWN_SEC = 60
+const resendCooldown = ref(RESEND_COOLDOWN_SEC)
+let cooldownTimer = null
+
+function startCooldown(seconds = RESEND_COOLDOWN_SEC) {
+  resendCooldown.value = seconds
+  if (cooldownTimer) clearInterval(cooldownTimer)
+  cooldownTimer = setInterval(() => {
+    resendCooldown.value--
+    if (resendCooldown.value <= 0) clearInterval(cooldownTimer)
+  }, 1000)
+}
 
 function validateField(field) {
   if (field === 'code') errors.value.code = !code.value.trim() ? ' ' : (code.value.length !== 6 ? ' ' : '')
@@ -70,7 +87,13 @@ function validateAll() {
 onMounted(() => {
   if (!email.value) {
     router.replace('/register')
+    return
   }
+  startCooldown(RESEND_COOLDOWN_SEC)
+})
+
+onUnmounted(() => {
+  if (cooldownTimer) clearInterval(cooldownTimer)
 })
 
 async function submit() {
@@ -97,12 +120,16 @@ async function submit() {
 }
 
 async function resend() {
+  if (resendCooldown.value > 0) return
   resendLoading.value = true
   error.value = ''
   try {
     await auth.resendCode(email.value)
+    startCooldown(RESEND_COOLDOWN_SEC)
   } catch (e) {
     error.value = e.response?.data?.message || 'Не удалось отправить код'
+    const after = e.response?.data?.can_resend_after
+    if (after != null) startCooldown(after)
   } finally {
     resendLoading.value = false
   }
