@@ -65,9 +65,46 @@ class ConversationController extends Controller
             ], 403);
         }
 
+        $conversation->load(['user1.mainPhoto', 'user2.mainPhoto']);
+
         return response()->json([
             'success' => true,
             'data' => $this->formatConversation($conversation)
+        ]);
+    }
+
+    public function otherUserPhotos($id)
+    {
+        $conversation = Conversation::find($id);
+        if (!$conversation) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Диалог не найден'
+            ], 404);
+        }
+
+        $user = Auth::user();
+        if (!$user->hasAccessToConversation($id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'У вас нет доступа к этому диалогу'
+            ], 403);
+        }
+
+        $otherUser = $conversation->otherUser($user->id);
+        $photos = $otherUser->photos()
+            ->orderBy('is_main', 'desc')
+            ->orderBy('created_at', 'asc')
+            ->get()
+            ->map(fn ($photo) => [
+                'id' => $photo->id,
+                'url' => $photo->url,
+                'is_main' => $photo->is_main,
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => $photos->values()->all(),
         ]);
     }
 
@@ -102,11 +139,14 @@ class ConversationController extends Controller
         $user = Auth::user();
         $otherUser = $conversation->otherUser($user->id);
 
+        $otherUser->loadMissing('mainPhoto');
+
         return [
             'id' => $conversation->id,
             'other_user' => [
                 'id' => $otherUser->id,
                 'name' => $otherUser->name,
+                'avatar_url' => $otherUser->mainPhoto?->url,
             ],
             'created_at' => $conversation->created_at,
             'updated_at' => $conversation->updated_at,

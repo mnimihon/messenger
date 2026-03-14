@@ -17,7 +17,7 @@ class ConversationRepositoryImpl implements ConversationRepository {
         $user = User::find($userID);
         return $this->model->where('user1_id', $userID)
             ->orWhere('user2_id', $userID)
-            ->with(['user1', 'user2', 'messages' => function($query) {
+            ->with(['user1', 'user2', 'user1.mainPhoto', 'user2.mainPhoto', 'messages' => function($query) {
                 $query->latest()->limit(1);
             }])
             ->withCount(['messages as unread_count' => function($query) use ($user) {
@@ -35,6 +35,7 @@ class ConversationRepositoryImpl implements ConversationRepository {
                     'other_user' => [
                         'id' => $otherUser->id,
                         'name' => $otherUser->name,
+                        'avatar_url' => $otherUser->mainPhoto?->url,
                     ],
                     'last_message' => $lastMessage ? [
                         'message' => $lastMessage->message,

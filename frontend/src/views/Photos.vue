@@ -3,16 +3,28 @@
     <div class="max-w-2xl mx-auto">
       <Card>
         <template #title>Фотографии профиля</template>
-        <template #subtitle>Загрузите хотя бы одно фото — затем можно перейти в чат</template>
+        <template #subtitle>Загрузите несколько фото (до 10 за раз). Главное фото отображается в аватарке.</template>
         <template #content>
           <div class="flex flex-wrap gap-4 mb-4">
             <div
               v-for="p in photos"
               :key="p.id"
-              class="relative w-24 h-24 rounded-lg overflow-hidden border bg-slate-100"
+              class="relative w-28 h-28 rounded-lg overflow-hidden border bg-slate-100 flex flex-col"
             >
-              <img :src="p.url" alt="" class="w-full h-full object-cover" />
-              <Badge v-if="p.is_main" value="Главное" class="absolute bottom-0 left-0 text-xs" />
+              <img :src="p.url" alt="" class="w-full h-20 object-cover" />
+              <div class="flex-1 flex items-center justify-center gap-1 p-1 bg-white">
+                <Badge v-if="p.is_main" value="Главное" severity="success" class="text-xs" />
+                <Button
+                  v-else
+                  icon="pi pi-star"
+                  size="small"
+                  text
+                  rounded
+                  severity="secondary"
+                  title="Сделать главным"
+                  @click="setMain(p.id)"
+                />
+              </div>
             </div>
           </div>
           <FileUpload
@@ -20,9 +32,11 @@
             accept="image/jpeg,image/png,image/jpg"
             :max-file-size="2000000"
             :auto="false"
-            choose-label="Выбрать фото"
+            :multiple="true"
+            choose-label="Выбрать одно или несколько фото"
             @select="onSelect"
           />
+          <p class="text-sm text-slate-500 mt-1">Максимум 10 фото за раз, до 2 МБ каждое</p>
           <Message v-if="msg" :severity="msgOk ? 'success' : 'error'" class="mt-4" :closable="false">
             {{ msg }}
           </Message>
@@ -63,7 +77,8 @@ async function onSelect(event) {
   if (!files?.length) return
   msg.value = ''
   const form = new FormData()
-  for (let i = 0; i < files.length; i++) {
+  const limit = Math.min(files.length, 10)
+  for (let i = 0; i < limit; i++) {
     form.append('photos[]', files[i])
   }
   try {
@@ -71,11 +86,23 @@ async function onSelect(event) {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
     msgOk.value = true
-    msg.value = 'Фото загружены'
+    msg.value = files.length > 1 ? `Загружено фото: ${limit}` : 'Фото загружено'
     await load()
   } catch (e) {
     msgOk.value = false
     msg.value = e.response?.data?.message || 'Ошибка загрузки'
+  }
+}
+
+async function setMain(photoId) {
+  try {
+    await api.post(`/photos/${photoId}/set-main`)
+    msgOk.value = true
+    msg.value = 'Главное фото обновлено'
+    await load()
+  } catch (e) {
+    msgOk.value = false
+    msg.value = e.response?.data?.message || 'Ошибка'
   }
 }
 

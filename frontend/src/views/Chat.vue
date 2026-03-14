@@ -17,7 +17,17 @@
           :class="{ 'bg-slate-100': chat.currentConversationId === c.id }"
           @click="openConversation(c)"
         >
-          <Avatar :label="(c.other_user?.name || '?').charAt(0)" shape="circle" />
+          <div
+            class="shrink-0 cursor-pointer rounded-full overflow-hidden ring-2 ring-transparent hover:ring-primary/30"
+            @click.stop="openGallery(c.id)"
+          >
+            <Avatar
+              :image="c.other_user?.avatar_url || undefined"
+              :label="(c.other_user?.avatar_url ? '' : (c.other_user?.name || '?').charAt(0))"
+              shape="circle"
+              size="normal"
+            />
+          </div>
           <div class="flex-1 min-w-0">
             <div class="font-medium truncate">{{ c.other_user?.name }}</div>
             <div class="text-sm text-slate-500 truncate">
@@ -34,7 +44,17 @@
     <main class="flex-1 flex flex-col min-w-0">
       <template v-if="chat.currentConversationId">
         <div class="p-3 border-b bg-white flex items-center gap-2">
-          <Avatar :label="activeOtherName.charAt(0)" shape="circle" />
+          <div
+            class="shrink-0 cursor-pointer rounded-full overflow-hidden ring-2 ring-transparent hover:ring-primary/30"
+            @click="openGallery(chat.currentConversationId)"
+          >
+            <Avatar
+              :image="activeOther?.avatar_url || undefined"
+              :label="(activeOther?.avatar_url ? '' : activeOtherName.charAt(0))"
+              shape="circle"
+              size="normal"
+            />
+          </div>
           <span class="font-medium">{{ activeOtherName }}</span>
         </div>
         <div ref="scrollRef" class="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
@@ -67,6 +87,45 @@
         Выберите диалог
       </div>
     </main>
+
+    <Dialog
+      v-model:visible="galleryVisible"
+      modal
+      :header="galleryTitle"
+      :style="{ width: '90vw', maxWidth: '600px' }"
+      :dismissable-mask="true"
+      @hide="galleryPhotos = []"
+    >
+      <div v-if="!galleryPhotos.length" class="py-8 text-center text-slate-500">
+        У пользователя пока нет фото
+      </div>
+      <div v-else class="flex flex-col items-center gap-4">
+        <div class="relative w-full flex items-center justify-center bg-slate-100 rounded-lg min-h-[300px]">
+          <img
+            :src="galleryPhotos[galleryIndex]?.url"
+            alt=""
+            class="max-w-full max-h-[70vh] object-contain"
+          />
+        </div>
+        <div class="flex items-center gap-4">
+          <Button
+            icon="pi pi-chevron-left"
+            rounded
+            text
+            :disabled="galleryIndex <= 0"
+            @click="galleryIndex = Math.max(0, galleryIndex - 1)"
+          />
+          <span class="text-sm text-slate-600">{{ galleryIndex + 1 }} / {{ galleryPhotos.length }}</span>
+          <Button
+            icon="pi pi-chevron-right"
+            rounded
+            text
+            :disabled="galleryIndex >= galleryPhotos.length - 1"
+            @click="galleryIndex = Math.min(galleryPhotos.length - 1, galleryIndex + 1)"
+          />
+        </div>
+      </div>
+    </Dialog>
   </div>
 </template>
 
@@ -76,18 +135,32 @@ import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Avatar from 'primevue/avatar'
 import Badge from 'primevue/badge'
+import Dialog from 'primevue/dialog'
 import { useChatStore } from '@/stores/chat'
 import { useAuthStore } from '@/stores/auth'
+import api from '@/api/axios'
 
 const chat = useChatStore()
 const auth = useAuthStore()
 const draft = ref('')
 const scrollRef = ref(null)
-let echoChannel = null
+const echoChannels = ref({})
+const galleryVisible = ref(false)
+const galleryPhotos = ref([])
+const galleryIndex = ref(0)
+const galleryUserName = ref('')
+
+const activeOther = computed(() => {
+  const c = chat.conversations.find((x) => x.id === chat.currentConversationId)
+  return c?.other_user
+})
 
 const activeOtherName = computed(() => {
-  const c = chat.conversations.find((x) => x.id === chat.currentConversationId)
-  return c?.other_user?.name || 'Чат'
+  return activeOther.value?.name || 'Чат'
+})
+
+const galleryTitle = computed(() => {
+  return galleryUserName.value ? `Фото: ${galleryUserName.value}` : 'Галерея'
 })
 
 function formatTime(iso) {
@@ -96,21 +169,64 @@ function formatTime(iso) {
   return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
 }
 
-async function openConversation(c) {
-  if (echoChannel) {
-    window.Echo.leave(`private-conversation.${chat.currentConversationId}`)
-    echoChannel = null
-  }
-  await chat.loadMessages(c.id)
-  echoChannel = window.Echo.private(`conversation.${c.id}`)
-  echoChannel.listen('.message.sent', (e) => {
-    const msg = e.message
-    if (msg.conversation_id !== c.id) return
+function handleNewMessage(msg) {
+  const conversationId = msg.conversation_id
+  const isCurrentConversation = conversationId === chat.currentConversationId
+  const myId = auth.user?.id
+  const senderId = msg.sender?.id
+  const isFromOther =
+    myId != null &&
+    senderId != null &&
+    Number(senderId) !== Number(myId)
+
+  chat.updateConversationPreview(conversationId, msg)
+
+  if (isCurrentConversation) {
     const exists = chat.messages.some((m) => m.id === msg.id)
     if (!exists) chat.messages.push(msg)
     nextTick(scrollBottom)
+  } else if (isFromOther) {
+    chat.incrementConversationUnread(conversationId)
+  }
+}
+
+function setupConversationChannels() {
+  const ids = (chat.conversations || []).map((c) => c.id)
+  const current = Object.keys(echoChannels.value)
+
+  current.forEach((id) => {
+    if (!ids.includes(Number(id))) {
+      window.Echo.leave(`conversation.${id}`)
+      delete echoChannels.value[id]
+    }
   })
+
+  ids.forEach((id) => {
+    if (echoChannels.value[id]) return
+    const ch = window.Echo.private(`conversation.${id}`)
+    ch.listen('.message.sent', (e) => handleNewMessage(e.message))
+    echoChannels.value[id] = ch
+  })
+}
+
+async function openConversation(c) {
+  await chat.loadMessages(c.id)
+  chat.clearConversationUnread(c.id)
   nextTick(scrollBottom)
+}
+
+async function openGallery(conversationId) {
+  if (!conversationId) return
+  const conv = chat.conversations.find((x) => x.id === conversationId)
+  galleryUserName.value = conv?.other_user?.name || 'Пользователь'
+  try {
+    const { data } = await api.get(`/conversations/${conversationId}/other-user-photos`)
+    galleryPhotos.value = data.data || []
+    galleryIndex.value = 0
+  } catch {
+    galleryPhotos.value = []
+  }
+  galleryVisible.value = true
 }
 
 function scrollBottom() {
@@ -131,13 +247,20 @@ async function logout() {
   window.location.href = '/login'
 }
 
+watch(
+  () => chat.conversations,
+  () => setupConversationChannels(),
+  { immediate: true }
+)
+
 onMounted(async () => {
   await chat.loadConversations()
 })
 
 onUnmounted(() => {
-  if (chat.currentConversationId) {
-    window.Echo.leave(`private-conversation.${chat.currentConversationId}`)
-  }
+  Object.keys(echoChannels.value).forEach((id) => {
+    window.Echo.leave(`conversation.${id}`)
+  })
+  echoChannels.value = {}
 })
 </script>

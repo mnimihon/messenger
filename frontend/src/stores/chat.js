@@ -35,6 +35,33 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
+  function updateConversationPreview(conversationId, lastMessage) {
+    const c = conversations.value.find((x) => x.id === conversationId)
+    if (c) {
+      c.last_message = lastMessage
+        ? {
+            message: lastMessage.message,
+            created_at: lastMessage.created_at,
+            is_read: lastMessage.is_read,
+          }
+        : null
+    }
+  }
+
+  function incrementConversationUnread(conversationId) {
+    const c = conversations.value.find((x) => x.id === conversationId)
+    if (c) {
+      c.unread_count = (c.unread_count || 0) + 1
+    }
+  }
+
+  function clearConversationUnread(conversationId) {
+    const c = conversations.value.find((x) => x.id === conversationId)
+    if (c) {
+      c.unread_count = 0
+    }
+  }
+
   async function sendMessage(text) {
     const { data } = await api.post('/messages', {
       conversation_id: currentConversationId.value,
@@ -45,7 +72,9 @@ export const useChatStore = defineStore('chat', () => {
     if (!exists) {
       messages.value.push(msg)
     }
+    updateConversationPreview(currentConversationId.value, msg)
     await loadConversations()
+    clearConversationUnread(currentConversationId.value)
     return msg
   }
 
@@ -78,5 +107,8 @@ export const useChatStore = defineStore('chat', () => {
     loadMessages,
     sendMessage,
     openOrCreateConversation,
+    updateConversationPreview,
+    incrementConversationUnread,
+    clearConversationUnread,
   }
 })
