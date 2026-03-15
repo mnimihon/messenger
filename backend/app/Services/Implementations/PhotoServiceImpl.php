@@ -17,7 +17,7 @@ class PhotoServiceImpl implements PhotoService
         private readonly PhotoRepository $repository
     ) {}
 
-    public function getPhotoLimitMessage(int $userID, int $newCount): bool
+    public function isPhotoLimit(int $userID, int $newCount): bool
     {
         $user = User::find($userID);
         $currentCount = $user->photos()->count();
