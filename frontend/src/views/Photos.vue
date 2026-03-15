@@ -1,9 +1,9 @@
 <template>
   <div class="min-h-screen bg-slate-50 p-3 sm:p-4 md:p-6">
     <div class="max-w-2xl mx-auto w-full">
-      <Card>
-        <template #title>Фотографии профиля</template>
-        <template #subtitle>Загрузите фотографии (не более 10)</template>
+      <Card class="photos-card">
+        <template #title><span class="block text-center">Фотографии профиля</span></template>
+        <template #subtitle><span class="block text-center">Загрузите фотографии (не более 10)</span></template>
         <template #content>
           <div class="flex flex-wrap gap-3 sm:gap-4 mb-4">
             <div
@@ -34,23 +34,23 @@
               </div>
             </div>
           </div>
-          <div class="file-upload-wrap">
-            <FileUpload
-              mode="basic"
-              accept="image/jpeg,image/png,image/jpg"
-              :max-file-size="2000000"
-              :auto="false"
-              :multiple="true"
-              choose-label="Выбрать одно или несколько фото"
-              @select="onSelect"
-            />
-          </div>
           <Message v-if="msg" :severity="msgOk ? 'success' : 'error'" class="mt-4" :closable="false">
             {{ msg }}
           </Message>
-          <div class="flex flex-wrap gap-2 mt-6">
-            <Button label="В чат" icon="pi pi-comments" @click="goChat" class="flex-1 sm:flex-initial min-w-0" />
-            <Button label="Настройки" severity="secondary" outlined class="flex-1 sm:flex-initial min-w-0" @click="$router.push('/settings')" />
+          <div class="flex flex-wrap items-center gap-2 mt-6">
+            <div class="file-upload-wrap">
+              <FileUpload
+                mode="basic"
+                accept="image/jpeg,image/png,image/jpg"
+                :max-file-size="2000000"
+                :auto="false"
+                :multiple="true"
+                choose-label="Загрузить"
+                :choose-icon="null"
+                @select="onSelect"
+              />
+            </div>
+            <Button label="Далее" @click="goChat" class="ml-auto" />
           </div>
         </template>
       </Card>
@@ -93,8 +93,6 @@ async function onSelect(event) {
     await api.post('/photos', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
-    msgOk.value = true
-    msg.value = files.length > 1 ? `Загружено фото: ${limit}` : 'Фото загружено'
     await load()
   } catch (e) {
     msgOk.value = false
@@ -137,8 +135,42 @@ function goChat() {
 </script>
 
 <style scoped>
+/* Заголовок и подзаголовок карточки по центру */
+.photos-card :deep(.p-card-title),
+.photos-card :deep(.p-card-subtitle) {
+  text-align: center;
+  width: 100%;
+}
 /* Скрыть только надпись "No file chosen", кнопка остаётся */
 .file-upload-wrap :deep(.p-fileupload-content) {
   display: none;
+}
+/* Надпись рядом с кнопкой (следующий span и т.п.) */
+.file-upload-wrap :deep(.p-fileupload-choose ~ span),
+.file-upload-wrap :deep(.p-fileupload-basic > span),
+.file-upload-wrap :deep(.p-button + span) {
+  display: none !important;
+}
+/* Текст у нативного input[type=file] в некоторых браузерах */
+.file-upload-wrap :deep(input[type="file"]) {
+  font-size: 0;
+  color: transparent;
+  max-width: 0;
+  overflow: hidden;
+}
+/* Убрать иконку (SVG) у кнопки «Загрузить» */
+.file-upload-wrap :deep(.p-fileupload-choose .p-button-icon),
+.file-upload-wrap :deep(.p-fileupload-choose [class*="icon"]),
+.file-upload-wrap :deep(.p-fileupload-choose svg),
+.file-upload-wrap :deep(.p-button svg),
+.file-upload-wrap :deep(button svg),
+.file-upload-wrap :deep(svg) {
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  clip: rect(0, 0, 0, 0) !important;
 }
 </style>
