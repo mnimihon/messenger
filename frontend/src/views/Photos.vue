@@ -13,16 +13,23 @@
             >
               <img :src="p.url" alt="" class="w-full h-14 sm:h-20 object-cover" />
               <div class="flex-1 flex items-center justify-center gap-1 p-0.5 sm:p-1 bg-white min-h-0">
-                <Badge v-if="p.is_main" value="Главное" severity="success" class="text-xs" />
                 <Button
-                  v-else
-                  icon="pi pi-star"
+                  :icon="p.is_main ? 'pi pi-star-fill' : 'pi pi-star'"
                   size="small"
                   text
                   rounded
-                  severity="secondary"
-                  title="Сделать главным"
+                  :class="p.is_main ? 'text-primary' : 'text-slate-400 hover:text-primary'"
+                  :title="p.is_main ? 'Главное фото' : 'Сделать главным'"
                   @click="setMain(p.id)"
+                />
+                <Button
+                  icon="pi pi-times"
+                  size="small"
+                  text
+                  rounded
+                  class="text-red-500 hover:text-red-600"
+                  title="Удалить"
+                  @click="removePhoto(p.id)"
                 />
               </div>
             </div>
@@ -95,6 +102,10 @@ async function onSelect(event) {
 }
 
 async function setMain(photoId) {
+  photos.value = photos.value.map((p) => ({
+    ...p,
+    is_main: p.id === photoId,
+  }))
   try {
     await api.post(`/photos/${photoId}/set-main`)
     msgOk.value = true
@@ -103,6 +114,19 @@ async function setMain(photoId) {
   } catch (e) {
     msgOk.value = false
     msg.value = e.response?.data?.message || 'Ошибка'
+    await load()
+  }
+}
+
+async function removePhoto(photoId) {
+  try {
+    await api.delete(`/photos/${photoId}`)
+    msgOk.value = true
+    msg.value = 'Фото удалено'
+    await load()
+  } catch (e) {
+    msgOk.value = false
+    msg.value = e.response?.data?.message || 'Ошибка удаления'
   }
 }
 
