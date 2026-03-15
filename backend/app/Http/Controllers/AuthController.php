@@ -8,6 +8,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\ResendCodeRequest;
 use App\Http\Requests\Auth\ResetPasswordRequest;
+use App\Http\Requests\Auth\VerificationCooldownRequest;
 use App\Http\Requests\Auth\VerifyEmailRequest;
 use App\Models\User;
 use App\Notifications\EmailVerificationCodeNotification;
@@ -28,7 +29,8 @@ class AuthController extends Controller
             email: $request->email,
             password: Hash::make($request->password),
             verificationCode: $verificationCode,
-            verificationCodeExpiresAt: now()->addMinutes(10)
+            verificationCodeExpiresAt: now()->addSeconds(User::VERIFICATION_CODE_EXPIRES_AT),
+            verificationCodeSentExpiresAt: now()->addSeconds(User::CAN_RESEND_AFTER)
         ));
         $user->notify(new EmailVerificationCodeNotification($verificationCode));
 
@@ -38,6 +40,19 @@ class AuthController extends Controller
         ], 201);
     }
 
+
+    public function verificationCooldown(VerificationCooldownRequest $request, UserRepository $userRepository, UserService $userService)
+    {
+        $user = $userRepository->getByEmail($request->email);
+        if ($user->hasVerifiedEmail()) {
+            return response()->json(['can_resend_after_seconds' => 0]);
+        }
+        if (!$user->verification_code_sent_expires_at) {
+            return response()->json(['can_resend_after_seconds' => 0]);
+        }
+
+        return response()->json(['can_resend_after_seconds' => $userService->resendAfter($user)]);
+    }
 
     public function verifyEmail(VerifyEmailRequest $request, UserRepository $userRepository)
     {
@@ -77,7 +92,7 @@ class AuthController extends Controller
             ], 400);
         }
 
-        if ($user->trySendCodeLater()) {
+        if ($user->isNotAllowResendCode()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Код уже был отправлен. Попробуйте через минуту.',

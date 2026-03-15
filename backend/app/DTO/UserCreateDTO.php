@@ -12,6 +12,7 @@ class UserCreateDTO
         public readonly string $password,
         public readonly int $verificationCode,
         public readonly CarbonInterface $verificationCodeExpiresAt,
+        public readonly CarbonInterface $verificationCodeSentExpiresAt,
     ) {}
 
     public function toDatabaseArray(): array
@@ -21,7 +22,8 @@ class UserCreateDTO
             'email' => $this->email,
             'password' => $this->password,
             'verification_code' => $this->verificationCode,
-            'verification_code_expires_at' => $this->verificationCodeExpiresAt
+            'verification_code_expires_at' => $this->verificationCodeExpiresAt,
+            'verification_code_sent_expires_at' => $this->verificationCodeSentExpiresAt,
         ];
     }
 }

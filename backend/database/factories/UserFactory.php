@@ -19,6 +19,7 @@ class UserFactory extends Factory
             'email_verified_at' => $this->faker->optional(0.7)->dateTimeBetween('-1 year', 'now'),
             'verification_code' => random_int(0, 999999),
             'verification_code_expires_at' => $this->faker->dateTimeBetween('-10 minutes', '+10 minutes'),
+            'verification_code_sent_expires_at' => null,
         ];
     }
 }

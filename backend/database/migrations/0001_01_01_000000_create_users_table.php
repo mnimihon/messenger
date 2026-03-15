@@ -17,6 +17,7 @@ return new class extends Migration
             $table->integer('verification_code')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->timestamp('verification_code_expires_at')->nullable();
+            $table->timestamp('verification_code_sent_expires_at')->nullable();
 
             $table->integer('reset_password_code')->nullable();
             $table->timestamp('reset_password_code_expires_at')->nullable();

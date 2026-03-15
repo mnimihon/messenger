@@ -39,6 +39,7 @@ class User extends Authenticatable
         'password',
         'verification_code',
         'verification_code_expires_at',
+        'verification_code_sent_expires_at',
         'reset_password_code_expires_at',
         'reset_password_code_sent_at',
         'reset_password_attempts',
@@ -66,6 +67,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'verification_code_expires_at' => 'datetime',
+            'verification_code_sent_expires_at' => 'datetime',
             'reset_password_code_expires_at' => 'datetime',
             'reset_password_code_sent_at' => 'datetime',
             'reset_password_locked_until' => 'datetime',
@@ -103,6 +105,7 @@ class User extends Authenticatable
         $this->email_verified_at = now();
         $this->verification_code = null;
         $this->verification_code_expires_at = null;
+        $this->verification_code_sent_expires_at = null;
         return $this->save();
     }
 
@@ -110,6 +113,7 @@ class User extends Authenticatable
     {
         $this->verification_code = $verificationCode;
         $this->verification_code_expires_at = now()->addMinutes(self::VERIFICATION_CODE_EXPIRES_AT);
+        $this->verification_code_sent_expires_at = now()->addSeconds(self::CAN_RESEND_AFTER);
         return $this->save();
     }
 
@@ -169,10 +173,10 @@ class User extends Authenticatable
             $this->verification_code_expires_at < now();
     }
 
-    public function trySendCodeLater(): bool
+    public function isNotAllowResendCode(): bool
     {
-        return $this->verification_code_expires_at &&
-            round($this->verification_code_expires_at->diffInMinutes(now())) < self::SEND_CODE_LATER_MINUTES;
+        return $this->verification_code_sent_expires_at &&
+            $this->verification_code_sent_expires_at > now();
     }
 
     public function isTooManyFailedLoginAttempts(): bool

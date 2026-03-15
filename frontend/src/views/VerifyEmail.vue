@@ -49,6 +49,7 @@ import Card from 'primevue/card'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
+import api from '@/api/axios'
 import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
@@ -67,8 +68,10 @@ const resendCooldown = ref(RESEND_COOLDOWN_SEC)
 let cooldownTimer = null
 
 function startCooldown(seconds = RESEND_COOLDOWN_SEC) {
-  resendCooldown.value = seconds
+  const sec = Math.max(0, Math.floor(Number(seconds)) || 0)
+  resendCooldown.value = sec
   if (cooldownTimer) clearInterval(cooldownTimer)
+  if (sec <= 0) return
   cooldownTimer = setInterval(() => {
     resendCooldown.value--
     if (resendCooldown.value <= 0) clearInterval(cooldownTimer)
@@ -84,12 +87,20 @@ function validateAll() {
   return !errors.value.code
 }
 
-onMounted(() => {
+onMounted(async () => {
   if (!email.value) {
     router.replace('/register')
     return
   }
-  startCooldown(RESEND_COOLDOWN_SEC)
+  try {
+    const { data } = await api.get('/verification-cooldown', {
+      params: { email: email.value },
+    })
+    const seconds = data?.can_resend_after_seconds
+    startCooldown(seconds != null ? seconds : RESEND_COOLDOWN_SEC)
+  } catch {
+    startCooldown(RESEND_COOLDOWN_SEC)
+  }
 })
 
 onUnmounted(() => {

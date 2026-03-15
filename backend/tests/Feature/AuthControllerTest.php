@@ -42,6 +42,7 @@ class AuthControllerTest extends TestCase
 
         $this->assertNotNull($user->verification_code);
         $this->assertNotNull($user->verification_code_expires_at);
+        $this->assertNotNull($user->verification_code_sent_expires_at);
 
         Notification::assertSentTimes(
             \App\Notifications\EmailVerificationCodeNotification::class,
@@ -81,6 +82,7 @@ class AuthControllerTest extends TestCase
 
         $user->verification_code = 111111;
         $user->verification_code_expires_at = now()->addMinutes(10);
+        $user->verification_code_sent_expires_at = now()->addSeconds(User::CAN_RESEND_AFTER);
         $user->save();
 
         $response = $this->postJson('/api/verify-email', [
@@ -105,6 +107,7 @@ class AuthControllerTest extends TestCase
 
         $user->verification_code = 123456;
         $user->verification_code_expires_at = now()->addMinutes(10);
+        $user->verification_code_sent_expires_at = now()->addSeconds(User::CAN_RESEND_AFTER);
         $user->save();
 
         $response = $this->postJson('/api/verify-email', [
@@ -127,6 +130,7 @@ class AuthControllerTest extends TestCase
         $this->assertNotNull($user->email_verified_at);
         $this->assertNull($user->verification_code);
         $this->assertNull($user->verification_code_expires_at);
+        $this->assertNull($user->verification_code_sent_expires_at);
     }
 
     /*
@@ -158,7 +162,7 @@ class AuthControllerTest extends TestCase
             'email_verified_at' => null,
         ]);
 
-        $user->verification_code_expires_at = now()->addMinutes(1);
+        $user->verification_code_sent_expires_at = now()->addSeconds(30);
         $user->save();
 
         $response = $this->postJson('/api/resend-code', [
@@ -184,6 +188,7 @@ class AuthControllerTest extends TestCase
 
         $user->verification_code = 111111;
         $user->verification_code_expires_at = now()->subMinutes(10);
+        $user->verification_code_sent_expires_at = now()->subMinutes(2);
         $user->save();
 
         $response = $this->postJson('/api/resend-code', [
@@ -200,6 +205,7 @@ class AuthControllerTest extends TestCase
         $user->refresh();
         $this->assertNotNull($user->verification_code);
         $this->assertNotNull($user->verification_code_expires_at);
+        $this->assertNotNull($user->verification_code_sent_expires_at);
 
         Notification::assertSentTimes(
             \App\Notifications\EmailVerificationCodeNotification::class,

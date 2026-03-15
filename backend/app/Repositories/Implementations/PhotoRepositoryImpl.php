@@ -5,7 +5,7 @@ use App\DTO\PhotoCreateDTO;
 use App\Models\Message;
 use App\Models\User;
 use App\Models\UserPhoto;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection;
 use App\Repositories\PhotoRepository;
 
 class PhotoRepositoryImpl implements PhotoRepository

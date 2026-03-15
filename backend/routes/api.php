@@ -15,6 +15,7 @@ Route::post('/broadcasting/auth', function (\Illuminate\Http\Request $request) {
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/verification-cooldown', [AuthController::class, 'verificationCooldown']);
 Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
 
 Route::post('/resend-code', [AuthController::class, 'resendCode']);

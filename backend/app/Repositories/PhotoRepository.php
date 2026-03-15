@@ -3,7 +3,7 @@ namespace App\Repositories;
 
 use App\DTO\PhotoCreateDTO;
 use App\Models\UserPhoto;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection;
 
 interface PhotoRepository
 {
