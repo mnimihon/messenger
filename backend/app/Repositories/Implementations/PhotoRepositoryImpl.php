@@ -19,8 +19,7 @@ class PhotoRepositoryImpl implements PhotoRepository
     {
         $user = User::find($userID);
         return $user->photos()
-            ->orderBy('is_main', 'desc')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'asc')
             ->get()
             ->map(function ($photo) {
                 return [

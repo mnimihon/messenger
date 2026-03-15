@@ -34,7 +34,7 @@
               </div>
             </div>
           </div>
-          <Message v-if="msg" :severity="msgOk ? 'success' : 'error'" class="mt-4" :closable="false">
+          <Message v-if="msg && !msgOk" severity="error" class="mt-4" :closable="false">
             {{ msg }}
           </Message>
           <div class="flex flex-wrap items-center gap-2 mt-6">
@@ -45,7 +45,7 @@
                 :max-file-size="2000000"
                 :auto="false"
                 :multiple="true"
-                choose-label="Загрузить"
+                choose-label="Выбрать фото"
                 :choose-icon="null"
                 @select="onSelect"
               />
@@ -158,7 +158,7 @@ function goChat() {
   max-width: 0;
   overflow: hidden;
 }
-/* Убрать иконку (SVG) у кнопки «Загрузить» */
+/* Убрать иконку (SVG) у кнопки «Выбрать фото» */
 .file-upload-wrap :deep(.p-fileupload-choose .p-button-icon),
 .file-upload-wrap :deep(.p-fileupload-choose [class*="icon"]),
 .file-upload-wrap :deep(.p-fileupload-choose svg),
