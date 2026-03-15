@@ -6,7 +6,7 @@ use Illuminate\Http\UploadedFile;
 
 interface PhotoService
 {
-
+    public function getPhotoLimitMessage(int $userID, int $newCount): bool;
     public function delete(UserPhoto $photo, int $userID): bool;
     public function store(UploadedFile $file, int $userID): UserPhoto;
 }

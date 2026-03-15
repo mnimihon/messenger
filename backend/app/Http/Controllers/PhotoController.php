@@ -27,6 +27,14 @@ class PhotoController extends Controller
         $user = Auth::user();
         $uploadedFiles = $request->file('photos');
 
+        $limitMessage = $photoService->getPhotoLimitMessage($user->id, count($uploadedFiles));
+        if (!$limitMessage) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Достигнут лимит: максимум ' . self::MAX_PHOTOS . ' фотографий.',
+            ], 422);
+        }
+
         $uploadedPhotos = [];
         $errors = [];
 

@@ -2,20 +2,27 @@
 namespace App\Services\Implementations;
 
 use App\DTO\PhotoCreateDTO;
-use App\DTO\UserCreateDTO;
 use App\Models\User;
 use App\Models\UserPhoto;
 use App\Repositories\PhotoRepository;
 use App\Services\PhotoService;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
-class PhotoServiceImpl implements PhotoService {
+class PhotoServiceImpl implements PhotoService
+{
+    public const MAX_PHOTOS = 10;
 
     public function __construct(
         private readonly PhotoRepository $repository
     ) {}
+
+    public function getPhotoLimitMessage(int $userID, int $newCount): bool
+    {
+        $user = User::find($userID);
+        $currentCount = $user->photos()->count();
+        return $currentCount + $newCount > self::MAX_PHOTOS;
+    }
 
     public function store(UploadedFile $file, int $userID): UserPhoto
     {
