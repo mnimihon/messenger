@@ -3,7 +3,7 @@
     <div class="max-w-2xl mx-auto w-full">
       <Card>
         <template #title>Фотографии профиля</template>
-        <template #subtitle>Загрузите несколько фото (до 10 за раз). Главное фото отображается в аватарке.</template>
+        <template #subtitle>Загрузите фотографии (не более 10)</template>
         <template #content>
           <div class="flex flex-wrap gap-3 sm:gap-4 mb-4">
             <div
@@ -34,16 +34,17 @@
               </div>
             </div>
           </div>
-          <FileUpload
-            mode="basic"
-            accept="image/jpeg,image/png,image/jpg"
-            :max-file-size="2000000"
-            :auto="false"
-            :multiple="true"
-            choose-label="Выбрать одно или несколько фото"
-            @select="onSelect"
-          />
-          <p class="text-xs sm:text-sm text-slate-500 mt-1">Максимум 10 фото за раз, до 2 МБ каждое</p>
+          <div class="file-upload-wrap">
+            <FileUpload
+              mode="basic"
+              accept="image/jpeg,image/png,image/jpg"
+              :max-file-size="2000000"
+              :auto="false"
+              :multiple="true"
+              choose-label="Выбрать одно или несколько фото"
+              @select="onSelect"
+            />
+          </div>
           <Message v-if="msg" :severity="msgOk ? 'success' : 'error'" class="mt-4" :closable="false">
             {{ msg }}
           </Message>
@@ -134,3 +135,10 @@ function goChat() {
   router.push('/')
 }
 </script>
+
+<style scoped>
+/* Скрыть только надпись "No file chosen", кнопка остаётся */
+.file-upload-wrap :deep(.p-fileupload-content) {
+  display: none;
+}
+</style>
