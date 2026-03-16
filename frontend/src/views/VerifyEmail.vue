@@ -64,7 +64,7 @@ const error = ref('')
 const errors = ref({ code: '' })
 const submitAttempted = ref(false)
 const RESEND_COOLDOWN_SEC = 60
-const resendCooldown = ref(RESEND_COOLDOWN_SEC)
+const resendCooldown = ref(0)
 let cooldownTimer = null
 
 function startCooldown(seconds = RESEND_COOLDOWN_SEC) {
@@ -92,6 +92,17 @@ onMounted(async () => {
     router.replace('/register')
     return
   }
+
+  // Если пришли со страницы логина с неподтверждённым email —
+  // сразу отправляем код повторно
+  if (route.query.autoResend === '1') {
+    try {
+      await auth.resendCode(email.value)
+    } catch (e) {
+      error.value = e.response?.data?.message || 'Не удалось отправить код'
+    }
+  }
+
   try {
     const { data } = await api.get('/verification-cooldown', {
       params: { email: email.value },

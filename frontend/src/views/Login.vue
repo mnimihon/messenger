@@ -85,7 +85,7 @@ async function submit() {
     const d = e.response?.data
     if (e.response?.status === 403 && d?.email) {
       localStorage.setItem('pending_verify_email', d.email || email.value)
-      router.push({ name: 'verify-email', query: { email: d.email || email.value } })
+      router.push({ name: 'verify-email', query: { email: d.email || email.value, autoResend: '1' } })
       return
     }
     error.value = d?.message || 'Ошибка входа'
