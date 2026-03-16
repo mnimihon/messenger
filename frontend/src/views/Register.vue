@@ -113,9 +113,14 @@ async function submit() {
     })
     router.push({ name: 'verify-email', query: { email: email.value } })
   } catch (e) {
-    error.value = e.response?.data?.message || e.response?.data?.errors
-      ? JSON.stringify(e.response.data.errors)
-      : 'Ошибка регистрации'
+    const data = e.response?.data
+    if (data?.message) {
+      error.value = data.message
+    } else if (data?.errors) {
+      error.value = JSON.stringify(data.errors)
+    } else {
+      error.value = 'Ошибка регистрации'
+    }
   } finally {
     loading.value = false
   }

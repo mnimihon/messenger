@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Hash;
 class User extends Authenticatable
 {
     const TOKEN_LIFETIME = 30;
-    const VERIFICATION_CODE_EXPIRES_AT = 10;
+    const VERIFICATION_CODE_EXPIRES_AT = 10 * 60;
     const RESET_PASSWORD_EXPIRES_AT = 10;
     const LOGIN_LOCKED_UNTIL = 15;
     const RESET_PASSWORD_LOCKED_MINUTES = 15;
@@ -112,7 +112,7 @@ class User extends Authenticatable
     public function setVerificationCode(int $verificationCode): bool
     {
         $this->verification_code = $verificationCode;
-        $this->verification_code_expires_at = now()->addMinutes(self::VERIFICATION_CODE_EXPIRES_AT);
+        $this->verification_code_expires_at = now()->addSeconds(self::VERIFICATION_CODE_EXPIRES_AT);
         $this->verification_code_sent_expires_at = now()->addSeconds(self::CAN_RESEND_AFTER);
         return $this->save();
     }

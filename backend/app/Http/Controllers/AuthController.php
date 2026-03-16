@@ -64,9 +64,18 @@ class AuthController extends Controller
             ], 400);
         }
 
+        /**
+         * return $this->verification_code != $code ||
+         * $this->verification_code_expires_at < now();
+         */
+
         if ($user->checkUnVerificationCode($request->code)) {
             return response()->json([
                 'success' => false,
+                'verification_code' => $request->code,
+                'verification_code_s' => $user->verification_code,
+                'verification_code_ss' => $user->verification_code_expires_at->format('Y-m-d H:i:s'),
+                'now' => (now())->format('Y-m-d H:i:s'),
                 'message' => 'Неверный или истекший код подтверждения'
             ], 400);
         }

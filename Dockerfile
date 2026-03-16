@@ -39,4 +39,4 @@ RUN chown -R www-data:www-data /var/www/html
 
 WORKDIR /var/www/html
 
-CMD ["php-fpm", "-F"]
+CMD ["bash", "-lc", "php artisan reverb:start & php-fpm -F"]

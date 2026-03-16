@@ -9,7 +9,7 @@ const routes = [
   { path: '/reset-password', name: 'reset-password', component: () => import('@/views/ResetPassword.vue'), meta: { guest: true } },
   { path: '/photos', name: 'photos', component: () => import('@/views/Photos.vue'), meta: { requiresAuth: true } },
   { path: '/settings', name: 'settings', component: () => import('@/views/Settings.vue'), meta: { requiresAuth: true } },
-  { path: '/', name: 'chat', component: () => import('@/views/Chat.vue'), meta: { requiresAuth: true } },
+  { path: '/', name: 'home', component: () => import('@/views/Home.vue') },
 ]
 
 const router = createRouter({

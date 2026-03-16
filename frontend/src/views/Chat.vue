@@ -151,9 +151,12 @@ import InputText from 'primevue/inputtext'
 import Avatar from 'primevue/avatar'
 import Badge from 'primevue/badge'
 import Dialog from 'primevue/dialog'
+import { useRouter } from 'vue-router'
 import { useChatStore } from '@/stores/chat'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/api/axios'
+
+const router = useRouter()
 
 const chat = useChatStore()
 const auth = useAuthStore()
@@ -261,7 +264,7 @@ async function send() {
 
 async function logout() {
   await auth.logout()
-  window.location.href = '/login'
+  router.push('/')
 }
 
 watch(

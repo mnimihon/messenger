@@ -72,7 +72,12 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function register(payload) {
-    await api.post('/register', payload)
+    const { data } = await api.post('/register', payload)
+    if (!data.success) {
+      const error = new Error(data.message || 'Ошибка регистрации')
+      error.response = { data }
+      throw error
+    }
     localStorage.setItem('pending_verify_email', payload.email)
     return true
   }
