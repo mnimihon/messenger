@@ -59,7 +59,7 @@ async function submit() {
   try {
     await api.post('/forgot-password', { email: email.value })
     ok.value = true
-    message.value = 'Если аккаунт существует, код отправлен на почту.'
+    message.value = ''
     setTimeout(() => router.push({ name: 'reset-password', query: { email: email.value } }), 1500)
   } catch (e) {
     message.value = e.response?.data?.message || 'Ошибка'

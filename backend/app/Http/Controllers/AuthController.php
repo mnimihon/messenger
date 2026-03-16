@@ -124,7 +124,7 @@ class AuthController extends Controller
         $user = $userRepository->getByEmail($request->email);
         if ($user) {
             if ($user->isTooManyFailedLoginAttempts()) {
-                $minutesLeft = round($user->login_locked_until->diffInMinutes(now()));
+                $minutesLeft = abs(round($user->login_locked_until->diffInMinutes(now())));
                 return response()->json([
                     'success' => false,
                     'message' => "Слишком много неудачных попыток входа. Попробуйте через {$minutesLeft} минут.",

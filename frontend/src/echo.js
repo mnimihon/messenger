@@ -15,24 +15,51 @@ function authHeaders() {
   }
 }
 
-window.Echo = new Echo({
-  broadcaster: 'reverb',
-  key: import.meta.env.VITE_REVERB_APP_KEY,
-  wsHost,
-  wsPort: Number(wsPort),
-  wssPort: Number(wsPort),
-  forceTLS: (import.meta.env.VITE_REVERB_SCHEME || 'http') === 'https',
-  enabledTransports: ['ws', 'wss'],
-  authEndpoint: `${apiBase.replace(/\/$/, '')}/broadcasting/auth`,
-  auth: {
-    headers: authHeaders(),
-  },
-  authTransport: 'ajax',
-})
+let echoInstance = null
+
+function createEcho() {
+  return new Echo({
+    broadcaster: 'reverb',
+    key: import.meta.env.VITE_REVERB_APP_KEY,
+    wsHost,
+    wsPort: Number(wsPort),
+    wssPort: Number(wsPort),
+    forceTLS: (import.meta.env.VITE_REVERB_SCHEME || 'http') === 'https',
+    enabledTransports: ['ws', 'wss'],
+    authEndpoint: `${apiBase.replace(/\/$/, '')}/broadcasting/auth`,
+    auth: {
+      headers: authHeaders(),
+    },
+    authTransport: 'ajax',
+  })
+}
+
+// Вызывать после логина / успешной верификации, когда уже есть токен
+export function ensureEchoInitialized() {
+  const token = localStorage.getItem('access_token')
+  if (!token) return
+  if (!echoInstance) {
+    echoInstance = createEcho()
+    window.Echo = echoInstance
+  } else {
+    refreshEchoAuth()
+  }
+}
 
 // Обновлять заголовок при смене токена (после логина/verify)
 export function refreshEchoAuth() {
-  if (window.Echo?.connector?.pusher?.config?.auth?.headers) {
-    Object.assign(window.Echo.connector.pusher.config.auth.headers, authHeaders())
+  if (echoInstance?.connector?.pusher?.config?.auth?.headers) {
+    Object.assign(echoInstance.connector.pusher.config.auth.headers, authHeaders())
+  }
+}
+
+// Отключать сокеты при логауте
+export function shutdownEcho() {
+  if (echoInstance) {
+    echoInstance.disconnect()
+    echoInstance = null
+    if (window.Echo) {
+      delete window.Echo
+    }
   }
 }

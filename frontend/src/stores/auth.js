@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api, { setAuthToken } from '@/api/axios'
-import { refreshEchoAuth } from '@/echo'
+import { ensureEchoInitialized, refreshEchoAuth, shutdownEcho } from '@/echo'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
@@ -17,7 +17,7 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem('access_token', token)
       if (expiresAt) localStorage.setItem('token_expiry', expiresAt)
       setAuthToken(token)
-      refreshEchoAuth()
+      ensureEchoInitialized()
     }
     if (payload.user) {
       user.value = payload.user
@@ -33,7 +33,7 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('user_data')
     localStorage.removeItem('pending_verify_email')
     setAuthToken(null)
-    refreshEchoAuth()
+    shutdownEcho()
   }
 
   async function fetchUser() {
