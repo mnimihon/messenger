@@ -45,12 +45,12 @@
                 :max-file-size="2000000"
                 :auto="false"
                 :multiple="true"
-                choose-label="Выбрать фото"
+                choose-label="Загрузить фото"
                 :choose-icon="null"
                 @select="onSelect"
               />
             </div>
-            <Button label="Далее" @click="goChat" class="ml-auto" />
+            <Button label="В чат" @click="goChat" class="ml-auto" />
           </div>
         </template>
       </Card>

@@ -1,146 +1,152 @@
 <template>
-  <div class="flex h-screen max-h-screen overflow-hidden bg-slate-100">
-    <aside
-      class="flex flex-col w-full md:w-80 shrink-0 border-r bg-white transition-all duration-200"
-      :class="{ 'hidden md:!flex': mobileView === 'chat' }"
-    >
-      <div class="p-3 border-b flex items-center justify-between shrink-0">
-        <span class="font-semibold text-base sm:text-lg">Диалоги</span>
-        <div class="flex gap-1">
-          <Button icon="pi pi-image" text rounded severity="secondary" title="Фото" @click="$router.push('/photos')" />
-          <Button icon="pi pi-cog" text rounded severity="secondary" title="Настройки" @click="$router.push('/settings')" />
-          <Button icon="pi pi-sign-out" text rounded severity="secondary" title="Выход" @click="logout" />
-        </div>
-      </div>
-      <div class="flex-1 overflow-y-auto">
-        <div
-          v-for="c in chat.conversations"
-          :key="c.id"
-          class="p-2.5 sm:p-3 border-b cursor-pointer hover:bg-slate-50 flex items-center gap-2 min-w-0"
-          :class="{ 'bg-slate-100': chat.currentConversationId === c.id }"
-          @click="openConversation(c)"
-        >
-          <div
-            class="shrink-0 cursor-pointer rounded-full overflow-hidden ring-2 ring-transparent hover:ring-primary/30"
-            @click.stop="openGallery(c.id)"
-          >
-            <Avatar
-              :image="c.other_user?.avatar_url || undefined"
-              :label="(c.other_user?.avatar_url ? '' : (c.other_user?.name || '?').charAt(0))"
-              shape="circle"
-              size="normal"
-            />
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="font-medium truncate">{{ c.other_user?.name }}</div>
-            <div class="text-sm text-slate-500 truncate">
-              {{ c.last_message?.message || 'Нет сообщений' }}
-            </div>
-          </div>
-          <Badge v-if="c.unread_count" :value="c.unread_count" />
-        </div>
-        <div v-if="!chat.conversations.length && !chat.loading" class="p-4 text-slate-500 text-sm">
-          Нет диалогов. Создайте через API (other_user_id) или сидеры.
-        </div>
-      </div>
-    </aside>
-    <main
-      class="flex-1 flex flex-col min-w-0 min-h-0 w-full"
-      :class="{ 'hidden md:!flex': mobileView === 'list' }"
-    >
-      <template v-if="chat.currentConversationId">
-        <div class="p-3 border-b bg-white flex items-center gap-2 shrink-0">
-          <Button
-            icon="pi pi-arrow-left"
-            text
-            rounded
-            severity="secondary"
-            class="md:hidden shrink-0"
-            aria-label="Назад к диалогам"
-            @click="mobileView = 'list'"
-          />
-          <div
-            class="shrink-0 cursor-pointer rounded-full overflow-hidden ring-2 ring-transparent hover:ring-primary/30"
-            @click="openGallery(chat.currentConversationId)"
-          >
-            <Avatar
-              :image="activeOther?.avatar_url || undefined"
-              :label="(activeOther?.avatar_url ? '' : activeOtherName.charAt(0))"
-              shape="circle"
-              size="normal"
-            />
-          </div>
-          <span class="font-medium truncate flex-1 min-w-0">{{ activeOtherName }}</span>
-        </div>
-        <div ref="scrollRef" class="flex-1 overflow-y-auto p-3 sm:p-4 flex flex-col gap-2 min-h-0">
-          <div
-            v-for="m in chat.messages"
-            :key="m.id"
-            class="flex"
-            :class="m.sender?.id === auth.user?.id ? 'justify-end' : 'justify-start'"
-          >
-            <div
-              class="max-w-[85%] sm:max-w-[70%] rounded-lg px-3 py-2 break-words"
-              :class="m.sender?.id === auth.user?.id ? 'bg-primary text-primary-contrast' : 'bg-white border'"
+  <div class="h-full">
+    <div class="p-3 sm:p-4 md:p-6 h-full">
+      <Card class="w-full h-full shadow-sm">
+        <template #content>
+          <div class="flex h-[calc(100vh-170px)] max-h-[calc(100vh-170px)] overflow-hidden rounded-lg">
+            <aside
+              class="flex flex-col w-full md:w-80 shrink-0 bg-white transition-all duration-200 rounded-l-lg"
+              :class="{ 'hidden md:!flex': mobileView === 'chat' }"
             >
-              <div class="text-sm">{{ m.message }}</div>
-              <div class="text-xs opacity-70 mt-1">{{ formatTime(m.created_at) }}</div>
-            </div>
-          </div>
-        </div>
-        <div class="p-2 sm:p-3 border-t bg-white flex gap-2 shrink-0">
-          <InputText
-            v-model="draft"
-            class="flex-1 min-w-0"
-            placeholder="Сообщение..."
-            @keyup.enter="send"
-          />
-          <Button icon="pi pi-send" @click="send" :disabled="!draft.trim()" class="shrink-0" />
-        </div>
-      </template>
-      <div v-else class="flex-1 flex items-center justify-center text-slate-500 p-4 text-center text-sm sm:text-base">
-        Выберите диалог
-      </div>
-    </main>
+              <div class="p-3 flex items-center justify-between shrink-0">
+                <span class="font-semibold text-base sm:text-lg">Диалоги</span>
+              </div>
+              <div class="flex-1 overflow-y-auto">
+                <div
+                  v-for="c in chat.conversations"
+                  :key="c.id"
+                  class="p-2.5 sm:p-3 cursor-pointer hover:bg-slate-50 flex items-center gap-2 min-w-0"
+                  :class="{ 'bg-slate-100': chat.currentConversationId === c.id }"
+                  @click="openConversation(c)"
+                >
+                  <div
+                    class="shrink-0 cursor-pointer rounded-full overflow-hidden ring-2 ring-transparent hover:ring-primary/30"
+                    @click.stop="openGallery(c.id)"
+                  >
+                    <Avatar
+                      :image="c.other_user?.avatar_url || undefined"
+                      :label="(c.other_user?.avatar_url ? '' : (c.other_user?.name || '?').charAt(0))"
+                      shape="circle"
+                      size="normal"
+                    />
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-medium truncate">{{ c.other_user?.name }}</div>
+                    <div class="text-sm text-slate-500 truncate">
+                      {{ c.last_message?.message || 'Нет сообщений' }}
+                    </div>
+                  </div>
+                  <Badge v-if="c.unread_count" :value="c.unread_count" />
+                </div>
+                <div v-if="!chat.conversations.length && !chat.loading" class="p-4 text-slate-500 text-sm">
+                  Нет диалогов
+                </div>
+              </div>
+            </aside>
+            <section
+              class="flex-1 flex flex-col min-w-0 min-h-0 w-full rounded-r-lg overflow-hidden"
+              :class="{ 'hidden md:!flex': mobileView === 'list' }"
+            >
+              <template v-if="chat.currentConversationId">
+                <div class="p-3 border-b bg-white flex items-center gap-2 shrink-0">
+                  <Button
+                    icon="pi pi-arrow-left"
+                    text
+                    rounded
+                    severity="secondary"
+                    class="md:hidden shrink-0"
+                    aria-label="Назад к диалогам"
+                    @click="mobileView = 'list'"
+                  />
+                  <div
+                    class="shrink-0 cursor-pointer rounded-full overflow-hidden ring-2 ring-transparent hover:ring-primary/30"
+                    @click="openGallery(chat.currentConversationId)"
+                  >
+                    <Avatar
+                      :image="activeOther?.avatar_url || undefined"
+                      :label="(activeOther?.avatar_url ? '' : activeOtherName.charAt(0))"
+                      shape="circle"
+                      size="normal"
+                    />
+                  </div>
+                  <span class="font-medium truncate flex-1 min-w-0">{{ activeOtherName }}</span>
+                </div>
+                <div ref="scrollRef" class="flex-1 overflow-y-auto p-3 sm:p-4 flex flex-col gap-2 min-h-0 bg-white">
+                  <div
+                    v-for="m in chat.messages"
+                    :key="m.id"
+                    class="flex"
+                    :class="m.sender?.id === auth.user?.id ? 'justify-end' : 'justify-start'"
+                  >
+                    <div
+                      class="max-w-[85%] sm:max-w-[70%] rounded-lg px-3 py-2 break-words"
+                      :class="m.sender?.id === auth.user?.id ? 'bg-primary text-primary-contrast' : 'bg-white border'"
+                    >
+                      <div class="text-sm">{{ m.message }}</div>
+                      <div class="text-xs opacity-70 mt-1">{{ formatTime(m.created_at) }}</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="p-2 sm:p-3 border-t bg-white flex gap-2 shrink-0">
+                  <InputText
+                    v-model="draft"
+                    class="flex-1 min-w-0"
+                    placeholder="Сообщение..."
+                    @keyup.enter="send"
+                  />
+                  <Button icon="pi pi-send" @click="send" :disabled="!draft.trim()" class="shrink-0" />
+                </div>
+              </template>
+              <div
+                v-else
+                class="flex-1 flex items-center justify-center bg-slate-100 text-slate-500 p-4 text-center text-sm sm:text-base"
+              >
+                Выберите диалог
+              </div>
+            </section>
 
-    <Dialog
-      v-model:visible="galleryVisible"
-      modal
-      :header="galleryTitle"
-      :style="{ width: '95vw', maxWidth: '600px' }"
-      :dismissable-mask="true"
-      @hide="galleryPhotos = []"
-    >
-      <div v-if="!galleryPhotos.length" class="py-8 text-center text-slate-500">
-        У пользователя пока нет фото
-      </div>
-      <div v-else class="flex flex-col items-center gap-4">
-        <div class="relative w-full flex items-center justify-center bg-slate-100 rounded-lg min-h-[300px]">
-          <img
-            :src="galleryPhotos[galleryIndex]?.url"
-            alt=""
-            class="max-w-full max-h-[70vh] object-contain"
-          />
-        </div>
-        <div class="flex items-center gap-4">
-          <Button
-            icon="pi pi-chevron-left"
-            rounded
-            text
-            :disabled="galleryIndex <= 0"
-            @click="galleryIndex = Math.max(0, galleryIndex - 1)"
-          />
-          <span class="text-sm text-slate-600">{{ galleryIndex + 1 }} / {{ galleryPhotos.length }}</span>
-          <Button
-            icon="pi pi-chevron-right"
-            rounded
-            text
-            :disabled="galleryIndex >= galleryPhotos.length - 1"
-            @click="galleryIndex = Math.min(galleryPhotos.length - 1, galleryIndex + 1)"
-          />
-        </div>
-      </div>
-    </Dialog>
+            <Dialog
+              v-model:visible="galleryVisible"
+              modal
+              :header="galleryTitle"
+              :style="{ width: '95vw', maxWidth: '600px' }"
+              :dismissable-mask="true"
+              @hide="galleryPhotos = []"
+            >
+              <div v-if="!galleryPhotos.length" class="py-8 text-center text-slate-500">
+                У пользователя пока нет фото
+              </div>
+              <div v-else class="flex flex-col items-center gap-4">
+                <div class="relative w-full flex items-center justify-center bg-slate-100 rounded-lg min-h-[300px]">
+                  <img
+                    :src="galleryPhotos[galleryIndex]?.url"
+                    alt=""
+                    class="max-w-full max-h-[70vh] object-contain"
+                  />
+                </div>
+                <div class="flex items-center gap-4">
+                  <Button
+                    icon="pi pi-chevron-left"
+                    rounded
+                    text
+                    :disabled="galleryIndex <= 0"
+                    @click="galleryIndex = Math.max(0, galleryIndex - 1)"
+                  />
+                  <span class="text-sm text-slate-600">{{ galleryIndex + 1 }} / {{ galleryPhotos.length }}</span>
+                  <Button
+                    icon="pi pi-chevron-right"
+                    rounded
+                    text
+                    :disabled="galleryIndex >= galleryPhotos.length - 1"
+                    @click="galleryIndex = Math.min(galleryPhotos.length - 1, galleryIndex + 1)"
+                  />
+                </div>
+              </div>
+            </Dialog>
+          </div>
+        </template>
+      </Card>
+    </div>
   </div>
 </template>
 
@@ -151,10 +157,12 @@ import InputText from 'primevue/inputtext'
 import Avatar from 'primevue/avatar'
 import Badge from 'primevue/badge'
 import Dialog from 'primevue/dialog'
+import Card from 'primevue/card'
 import { useRouter } from 'vue-router'
 import { useChatStore } from '@/stores/chat'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/api/axios'
+import { ensureEchoInitialized } from '@/echo'
 
 const router = useRouter()
 
@@ -274,6 +282,7 @@ watch(
 )
 
 onMounted(async () => {
+  ensureEchoInitialized()
   await chat.loadConversations()
 })
 
