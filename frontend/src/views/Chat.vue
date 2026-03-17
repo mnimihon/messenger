@@ -1,9 +1,9 @@
 <template>
   <div class="h-full">
     <div class="p-3 sm:p-4 md:p-6 h-full">
-      <Card class="w-full h-full shadow-sm">
+      <Card class="w-full h-full shadow-sm chat-card">
         <template #content>
-          <div class="flex h-[calc(100vh-170px)] max-h-[calc(100vh-170px)] overflow-hidden rounded-lg">
+          <div class="flex h-[calc(100vh-170px)] max-h-[calc(100vh-170px)]">
             <aside
               class="flex flex-col w-full md:w-80 shrink-0 bg-white transition-all duration-200 rounded-l-lg"
               :class="{ 'hidden md:!flex': mobileView === 'chat' }"
@@ -38,13 +38,17 @@
                   </div>
                   <Badge v-if="c.unread_count" :value="c.unread_count" />
                 </div>
-                <div v-if="!chat.conversations.length && !chat.loading" class="p-4 text-slate-500 text-sm">
+                <div
+                  v-if="!chat.conversations.length && !chat.loading"
+                  class="p-4 text-slate-500 text-sm flex items-center justify-center text-center"
+                >
                   Нет диалогов
                 </div>
               </div>
             </aside>
             <section
-              class="flex-1 flex flex-col min-w-0 min-h-0 w-full rounded-r-lg overflow-hidden"
+              class="flex-1 flex flex-col min-w-0 min-h-0 w-full bg-slate-100 rounded-lg shadow-sm overflow-hidden"
+              style="border-radius: 0.75rem;"
               :class="{ 'hidden md:!flex': mobileView === 'list' }"
             >
               <template v-if="chat.currentConversationId">
@@ -99,7 +103,7 @@
               </template>
               <div
                 v-else
-                class="flex-1 flex items-center justify-center bg-slate-100 text-slate-500 p-4 text-center text-sm sm:text-base"
+                class="flex-1 flex items-center justify-center text-slate-500 p-4 text-center text-sm sm:text-base"
               >
                 Выберите диалог
               </div>
@@ -293,3 +297,12 @@ onUnmounted(() => {
   echoChannels.value = {}
 })
 </script>
+
+<style scoped>
+.chat-card :deep(.p-card) {
+  border-radius: 0;
+  overflow: visible;
+  background: transparent;
+  box-shadow: none;
+}
+</style>
