@@ -1,7 +1,7 @@
 <template>
-  <div id="app" class="min-h-screen overflow-x-hidden bg-slate-50">
+  <div id="app" class="min-h-screen overflow-x-hidden bg-slate-50" :class="{ 'h-screen overflow-y-hidden flex flex-col': authStore.isAuthenticated }">
     <template v-if="authStore.isAuthenticated">
-      <header class="bg-white border-b px-3 sm:px-4 py-2 flex items-center justify-between">
+      <header class="bg-white border-b px-3 sm:px-4 py-2 flex items-center justify-between shrink-0">
         <router-link to="/" class="flex items-center gap-2">
           <span class="font-semibold text-2xl tracking-tight uppercase cursor-pointer">messenger</span>
         </router-link>
@@ -35,8 +35,10 @@
           />
         </div>
       </header>
-      <main class="min-h-[calc(100vh-56px)]">
-        <router-view />
+      <main class="flex-1 min-h-0 overflow-hidden flex flex-col">
+        <div class="flex-1 min-h-0 overflow-hidden flex flex-col">
+          <router-view />
+        </div>
       </main>
     </template>
     <template v-else>

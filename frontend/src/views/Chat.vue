@@ -1,9 +1,9 @@
 <template>
-  <div class="h-full">
-    <div class="p-3 sm:p-4 md:p-6 h-full">
-      <Card class="w-full h-full shadow-sm chat-card">
+  <div>
+    <div class="p-3 sm:p-4 md:p-6">
+      <Card class="w-full shadow-sm chat-card">
         <template #content>
-          <div class="flex h-[calc(100vh-170px)] max-h-[calc(100vh-170px)]">
+          <div class="flex h-[calc(100vh-140px)] max-h-[calc(100vh-140px)] overflow-hidden">
             <aside
               class="flex flex-col w-full md:w-80 shrink-0 bg-white transition-all duration-200 rounded-l-lg"
               :class="{ 'hidden md:!flex': mobileView === 'chat' }"
@@ -301,7 +301,7 @@ onUnmounted(() => {
 <style scoped>
 .chat-card :deep(.p-card) {
   border-radius: 0;
-  overflow: visible;
+  overflow: hidden;
   background: transparent;
   box-shadow: none;
 }
