@@ -34,6 +34,8 @@ import Button from 'primevue/button'
 import Message from 'primevue/message'
 import api from '@/api/axios'
 
+const RESET_RESEND_STORAGE_KEY = 'reset_password_resend_expires_at'
+
 const router = useRouter()
 const email = ref('')
 const loading = ref(false)
@@ -58,6 +60,8 @@ async function submit() {
   message.value = ''
   try {
     await api.post('/forgot-password', { email: email.value })
+    const expiresAt = Date.now() + 60 * 1000
+    localStorage.setItem(RESET_RESEND_STORAGE_KEY, String(expiresAt))
     ok.value = true
     message.value = ''
     setTimeout(() => router.push({ name: 'reset-password', query: { email: email.value } }), 1500)

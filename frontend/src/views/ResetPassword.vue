@@ -79,6 +79,7 @@ import { useAuthStore } from '@/stores/auth'
 import api from '@/api/axios'
 
 const RESEND_COOLDOWN_SEC = 60
+const RESET_RESEND_STORAGE_KEY = 'reset_password_resend_expires_at'
 
 const route = useRoute()
 const router = useRouter()
@@ -96,7 +97,7 @@ const errors = ref({
   password: '',
   passwordConfirmation: ''
 })
-const resendCooldown = ref(RESEND_COOLDOWN_SEC)
+const resendCooldown = ref(0)
 const resendLoading = ref(false)
 const submitAttempted = ref(false)
 let cooldownTimer = null
@@ -123,11 +124,21 @@ function validateAll() {
 }
 
 function startCooldown(seconds = RESEND_COOLDOWN_SEC) {
-  resendCooldown.value = seconds
+  const sec = Math.max(0, Math.floor(Number(seconds)) || 0)
+  resendCooldown.value = sec
   if (cooldownTimer) clearInterval(cooldownTimer)
+  if (sec <= 0) {
+    localStorage.removeItem(RESET_RESEND_STORAGE_KEY)
+    return
+  }
+  const expiresAt = Date.now() + sec * 1000
+  localStorage.setItem(RESET_RESEND_STORAGE_KEY, String(expiresAt))
   cooldownTimer = setInterval(() => {
     resendCooldown.value--
-    if (resendCooldown.value <= 0) clearInterval(cooldownTimer)
+    if (resendCooldown.value <= 0) {
+      clearInterval(cooldownTimer)
+      localStorage.removeItem(RESET_RESEND_STORAGE_KEY)
+    }
   }, 1000)
 }
 
@@ -156,7 +167,18 @@ async function resendCode() {
 
 onMounted(() => {
   if (!email.value && route.query.email) email.value = route.query.email
-  startCooldown(RESEND_COOLDOWN_SEC)
+
+  const raw = localStorage.getItem(RESET_RESEND_STORAGE_KEY)
+  if (raw) {
+    const msLeft = Number(raw) - Date.now()
+    const secLeft = Math.max(0, Math.ceil(msLeft / 1000))
+    if (secLeft > 0) {
+      startCooldown(secLeft)
+      return
+    }
+  }
+
+  resendCooldown.value = 0
 })
 
 onUnmounted(() => {

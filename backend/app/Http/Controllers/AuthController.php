@@ -64,18 +64,10 @@ class AuthController extends Controller
             ], 400);
         }
 
-        /**
-         * return $this->verification_code != $code ||
-         * $this->verification_code_expires_at < now();
-         */
-
         if ($user->checkUnVerificationCode($request->code)) {
             return response()->json([
                 'success' => false,
                 'verification_code' => $request->code,
-                'verification_code_s' => $user->verification_code,
-                'verification_code_ss' => $user->verification_code_expires_at->format('Y-m-d H:i:s'),
-                'now' => (now())->format('Y-m-d H:i:s'),
                 'message' => 'Неверный или истекший код подтверждения'
             ], 400);
         }
@@ -124,7 +116,7 @@ class AuthController extends Controller
         $user = $userRepository->getByEmail($request->email);
         if ($user) {
             if ($user->isTooManyFailedLoginAttempts()) {
-                $minutesLeft = abs(round($user->login_locked_until->diffInMinutes(now())));
+                $minutesLeft = abs(ceil($user->login_locked_until->diffInMinutes(now())));
                 return response()->json([
                     'success' => false,
                     'message' => "Слишком много неудачных попыток входа. Попробуйте через {$minutesLeft} минут.",
@@ -196,12 +188,12 @@ class AuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Код уже был отправлен. Попробуйте через ' . User::RESET_PASSWORD_MINUTES . ' минуту.',
-                'can_resend_after' => User::CAN_RESEND_AFTER - round($user->reset_password_code_sent_at->diffInSeconds(now()))
+                'can_resend_after' => User::CAN_RESEND_AFTER - ceil($user->reset_password_code_sent_at->diffInSeconds(now()))
             ], 429);
         }
 
         if ($user->isTooManyFailedResetAttempts()) {
-            $minutesLeft = round($user->reset_password_locked_until->diffInMinutes(now()));
+            $minutesLeft = abs(ceil($user->reset_password_locked_until->diffInMinutes(now())));
             return response()->json([
                 'success' => false,
                 'message' => "Слишком много неудачных попыток. Попробуйте через {$minutesLeft} минут.",
@@ -225,7 +217,7 @@ class AuthController extends Controller
         $user = $userRepository->getByEmail($request->email);
 
         if ($user->isTooManyFailedResetAttempts()) {
-            $minutesLeft = round($user->reset_password_locked_until->diffInMinutes(now()));
+            $minutesLeft = abs(ceil($user->reset_password_locked_until->diffInMinutes(now())));
             return response()->json([
                 'success' => false,
                 'message' => "Слишком много неудачных попыток. Попробуйте через {$minutesLeft} минут.",
