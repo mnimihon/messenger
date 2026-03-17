@@ -5,9 +5,9 @@
         <template #title>Профиль</template>
         <template #content>
           <form class="flex flex-col gap-3" @submit.prevent="saveName">
-            <label class="text-sm font-medium">Имя</label>
             <InputText
               v-model="name"
+              placeholder="Имя"
               class="w-full"
               :invalid="nameSubmitAttempted && !!errors.name"
               @blur="validateField('name')"
@@ -75,7 +75,7 @@
             @blur="validateField('deletePassword')"
             @input="validateField('deletePassword')"
           />
-          <Button label="Удалить аккаунт" severity="danger" :loading="deleteLoading" @click="deleteAccount" />
+          <Button label="Удалить аккаунт" severity="danger" class="w-full" :loading="deleteLoading" @click="deleteAccount" />
         </template>
       </Card>
       <Button label="Назад в чат" severity="secondary" outlined class="w-full sm:w-auto" @click="$router.push('/')" />
