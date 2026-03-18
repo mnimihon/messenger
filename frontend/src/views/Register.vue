@@ -1,7 +1,9 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-slate-50 p-3 sm:p-4 md:p-6">
     <Card class="w-full max-w-md shadow-md mx-2 sm:mx-0">
-      <template #title>Регистрация</template>
+      <template #title>
+        <div class="w-full text-center">Регистрация</div>
+      </template>
       <template #content>
         <form class="flex flex-col gap-4" @submit.prevent="submit">
           <InputText

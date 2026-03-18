@@ -7,7 +7,6 @@
       <template #content>
         <form class="flex flex-col gap-4" @submit.prevent="submit">
           <div class="flex flex-col gap-2">
-            <label for="code" class="text-sm font-medium">Код</label>
             <InputText
               id="code"
               v-model="code"

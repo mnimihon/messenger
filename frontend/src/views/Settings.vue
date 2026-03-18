@@ -2,7 +2,9 @@
   <div class="min-h-full bg-slate-50 pt-3 px-3 pb-1 sm:pt-4 sm:px-4 sm:pb-1.5 md:pt-6 md:px-6 md:pb-2">
     <div class="max-w-lg mx-auto flex flex-col gap-4 w-full min-w-0">
       <Card>
-        <template #title>Профиль</template>
+        <template #title>
+          <div class="w-full text-center">Профиль</div>
+        </template>
         <template #content>
           <form class="flex flex-col gap-3" @submit.prevent="saveName">
             <InputText
@@ -18,7 +20,9 @@
         </template>
       </Card>
       <Card>
-        <template #title>Смена пароля</template>
+        <template #title>
+          <div class="w-full text-center">Смена пароля</div>
+        </template>
         <template #content>
           <form class="flex flex-col gap-3" @submit.prevent="savePassword">
             <Password
@@ -62,7 +66,9 @@
         </template>
       </Card>
       <Card>
-        <template #title>Удаление аккаунта</template>
+        <template #title>
+          <div class="w-full text-center">Удаление аккаунта</div>
+        </template>
         <template #content>
           <Password
             v-model="deletePassword"
