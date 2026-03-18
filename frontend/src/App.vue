@@ -40,7 +40,14 @@
           class="app-main__inner"
           :class="route.path === '/' ? 'app-main__inner--no-scroll' : 'app-main__inner--scroll'"
         >
-          <router-view />
+          <router-view v-slot="{ Component }">
+            <template v-if="route.path === '/'">
+              <component :is="Component" />
+            </template>
+            <div v-else class="w-full min-w-0">
+              <component :is="Component" />
+            </div>
+          </router-view>
         </div>
       </main>
     </template>
