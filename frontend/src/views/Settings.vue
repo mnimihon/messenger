@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-slate-50 p-3 sm:p-4 md:p-6">
+  <div class="min-h-full bg-slate-50 p-3 sm:p-4 md:p-6">
     <div class="max-w-lg mx-auto flex flex-col gap-4 w-full min-w-0">
       <Card>
         <template #title>Профиль</template>

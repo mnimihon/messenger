@@ -1,7 +1,7 @@
 <template>
-  <div id="app" class="min-h-screen overflow-x-hidden bg-slate-50" :class="{ 'h-screen overflow-y-hidden flex flex-col': authStore.isAuthenticated }">
+  <div id="app" class="min-h-screen overflow-x-hidden bg-slate-50" :class="{ 'app-layout': authStore.isAuthenticated }">
     <template v-if="authStore.isAuthenticated">
-      <header class="bg-white border-b px-3 sm:px-4 py-2 flex items-center justify-between shrink-0">
+      <header class="shrink-0 h-[var(--app-header-h,3.5rem)] bg-white border-b px-3 sm:px-4 py-2 flex items-center justify-between">
         <router-link to="/" class="flex items-center gap-2">
           <span class="font-semibold text-2xl tracking-tight uppercase cursor-pointer">messenger</span>
         </router-link>
@@ -35,8 +35,11 @@
           />
         </div>
       </header>
-      <main class="flex-1 min-h-0 overflow-hidden flex flex-col">
-        <div class="flex-1 min-h-0 overflow-hidden flex flex-col">
+      <main class="app-main">
+        <div
+          class="app-main__inner"
+          :class="route.path === '/' ? 'app-main__inner--no-scroll' : 'app-main__inner--scroll'"
+        >
           <router-view />
         </div>
       </main>
@@ -49,11 +52,12 @@
 
 <script setup>
 import { onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
+const route = useRoute()
 const router = useRouter()
 
 onMounted(() => {

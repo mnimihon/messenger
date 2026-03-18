@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-slate-50 p-3 sm:p-4 md:p-6">
+  <div class="min-h-full bg-slate-50 p-3 sm:p-4 md:p-6">
     <div class="max-w-2xl mx-auto w-full">
       <Card class="photos-card">
         <template #title><span class="block text-center">Фотографии профиля</span></template>
