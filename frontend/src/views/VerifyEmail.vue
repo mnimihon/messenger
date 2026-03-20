@@ -55,7 +55,9 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 
-const email = ref(route.query.email || localStorage.getItem('pending_verify_email') || '')
+const PENDING_VERIFY_KEY = 'pending_verify_email'
+
+const email = ref('')
 const code = ref('')
 const loading = ref(false)
 const resendLoading = ref(false)
@@ -87,6 +89,21 @@ function validateAll() {
 }
 
 onMounted(async () => {
+  const qEmail = typeof route.query.email === 'string' ? route.query.email.trim() : ''
+  const needAutoResend = route.query.autoResend === '1'
+
+  if (qEmail) {
+    localStorage.setItem(PENDING_VERIFY_KEY, qEmail)
+  }
+
+  email.value = localStorage.getItem(PENDING_VERIFY_KEY) || ''
+
+  if (qEmail || needAutoResend) {
+    const newQuery = {}
+    if (needAutoResend) newQuery.autoResend = '1'
+    await router.replace({ name: 'verify-email', query: newQuery })
+  }
+
   if (!email.value) {
     router.replace('/register')
     return
@@ -94,7 +111,7 @@ onMounted(async () => {
 
   // Если пришли со страницы логина с неподтверждённым email —
   // сразу отправляем код повторно
-  if (route.query.autoResend === '1') {
+  if (needAutoResend) {
     try {
       await auth.resendCode(email.value)
     } catch (e) {

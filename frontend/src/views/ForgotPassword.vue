@@ -65,7 +65,8 @@ async function submit() {
     localStorage.setItem(RESET_RESEND_STORAGE_KEY, String(expiresAt))
     ok.value = true
     message.value = ''
-    setTimeout(() => router.push({ name: 'reset-password', query: { email: email.value } }), 1500)
+    localStorage.setItem('pending_reset_email', email.value.trim())
+    setTimeout(() => router.push({ name: 'reset-password' }), 1500)
   } catch (e) {
     message.value = e.response?.data?.message || 'Ошибка'
     ok.value = false

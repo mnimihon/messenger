@@ -113,7 +113,7 @@ async function submit() {
       password: password.value,
       password_confirmation: passwordConfirmation.value,
     })
-    router.push({ name: 'verify-email', query: { email: email.value } })
+    router.push({ name: 'verify-email' })
   } catch (e) {
     const data = e.response?.data
     if (data?.message) {

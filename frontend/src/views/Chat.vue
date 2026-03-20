@@ -91,7 +91,7 @@
                     </div>
                   </div>
                 </div>
-                <div class="p-2 sm:p-3 border-t bg-white flex gap-2 shrink-0">
+                <div class="px-2 pt-2 pb-0 sm:px-3 sm:pt-3 sm:pb-0 border-t bg-white flex gap-2 shrink-0">
                   <InputText
                     v-model="draft"
                     class="flex-1 min-w-0"

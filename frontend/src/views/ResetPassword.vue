@@ -82,12 +82,13 @@ import api from '@/api/axios'
 
 const RESEND_COOLDOWN_SEC = 60
 const RESET_RESEND_STORAGE_KEY = 'reset_password_resend_expires_at'
+const PENDING_RESET_EMAIL_KEY = 'pending_reset_email'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 
-const email = ref(route.query.email || '')
+const email = ref('')
 const code = ref('')
 const password = ref('')
 const passwordConfirmation = ref('')
@@ -168,7 +169,14 @@ async function resendCode() {
 }
 
 onMounted(() => {
-  if (!email.value && route.query.email) email.value = route.query.email
+  const qEmail = typeof route.query.email === 'string' ? route.query.email.trim() : ''
+  if (qEmail) {
+    localStorage.setItem(PENDING_RESET_EMAIL_KEY, qEmail)
+    router.replace({ name: 'reset-password', query: {} })
+  }
+
+  const stored = localStorage.getItem(PENDING_RESET_EMAIL_KEY) || ''
+  email.value = stored
 
   const raw = localStorage.getItem(RESET_RESEND_STORAGE_KEY)
   if (raw) {
@@ -204,6 +212,7 @@ async function submit() {
       password_confirmation: passwordConfirmation.value,
     })
     if (data.access_token) {
+      localStorage.removeItem(PENDING_RESET_EMAIL_KEY)
       auth.persistToken(data)
       router.push('/')
     }
