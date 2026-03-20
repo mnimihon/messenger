@@ -222,6 +222,10 @@ function handleNewMessage(msg) {
 }
 
 function setupConversationChannels() {
+  // После logout Echo может быть отключен и window.Echo удаляется.
+  // Чтобы не падать при размонтировании компонента, проверяем наличие Echo.
+  if (!window.Echo) return
+
   const ids = (chat.conversations || []).map((c) => c.id)
   const current = Object.keys(echoChannels.value)
 
@@ -291,9 +295,11 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  Object.keys(echoChannels.value).forEach((id) => {
-    window.Echo.leave(`conversation.${id}`)
-  })
+  if (window.Echo?.leave) {
+    Object.keys(echoChannels.value).forEach((id) => {
+      window.Echo.leave(`conversation.${id}`)
+    })
+  }
   echoChannels.value = {}
 })
 </script>
