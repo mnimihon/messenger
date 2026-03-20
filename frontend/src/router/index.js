@@ -10,6 +10,8 @@ const routes = [
   { path: '/photos', name: 'photos', component: () => import('@/views/Photos.vue'), meta: { requiresAuth: true } },
   { path: '/settings', name: 'settings', component: () => import('@/views/Settings.vue'), meta: { requiresAuth: true } },
   { path: '/', name: 'home', component: () => import('@/views/Home.vue') },
+  // 404 для неизвестных маршрутов (только SPA)
+  { path: '/:pathMatch(.*)*', name: 'not-found', component: () => import('@/views/NotFound.vue') },
 ]
 
 const router = createRouter({

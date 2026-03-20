@@ -58,7 +58,7 @@
                     text
                     rounded
                     severity="secondary"
-                    class="md:hidden shrink-0"
+                    class="md:!hidden shrink-0"
                     aria-label="Назад к диалогам"
                     @click="mobileView = 'list'"
                   />
