@@ -1,6 +1,7 @@
 services:
   app:
     build: .
+    image: messenger_app:latest
     container_name: messenger_app
     restart: unless-stopped
     working_dir: /var/www/html
@@ -29,6 +30,38 @@ services:
     depends_on:
       - app
 
+  queue:
+    image: messenger_app:latest
+    build: .
+    container_name: messenger_queue
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html:cached
+    networks:
+      - messenger_network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      app:
+        condition: service_started
+    environment:
+      - PHP_IDE_CONFIG=serverName=Docker
+      # Reverb слушает в контейнере `app`; для воркера очереди localhost из .env не подходит.
+      - REVERB_HOST=app
+      - REVERB_PORT=8080
+      - REVERB_SCHEME=http
+    command:
+      [
+        "php",
+        "artisan",
+        "queue:work",
+        "--verbose",
+        "--sleep=1",
+        "--tries=3",
+        "--timeout=120",
+      ]
+
   mysql:
     image: mysql:8.0
     container_name: messenger_mysql
@@ -40,6 +73,12 @@ services:
       - messenger_mysql_data:/var/lib/mysql
     networks:
       - messenger_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-psecret_messenger"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
 
   phpmyadmin:
     image: phpmyadmin:latest

@@ -39,4 +39,5 @@ RUN chown -R www-data:www-data /var/www/html
 
 WORKDIR /var/www/html
 
+# Reverb в фоне; php-fpm — на переднем плане. Очередь — отдельный сервис `queue` в docker-compose.
 CMD ["bash", "-lc", "php artisan reverb:start & php-fpm -F"]
