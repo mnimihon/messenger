@@ -1,0 +1,466 @@
+<template>
+  <div>
+    <div class="p-3 sm:p-4 md:p-6">
+      <Card class="w-full shadow-sm chat-card">
+        <template #content>
+          <div class="flex h-[calc(100vh-140px)] max-h-[calc(100vh-140px)] overflow-hidden">
+            <aside
+              class="flex flex-col w-full md:w-80 shrink-0 bg-white transition-all duration-200 rounded-l-lg"
+              :class="{ 'hidden md:!flex': mobileView === 'chat' }"
+            >
+              <div class="p-3 flex items-center justify-between shrink-0">
+                <span class="font-semibold text-base sm:text-lg">Диалоги</span>
+              </div>
+              <div class="flex-1 overflow-y-auto">
+                <div
+                  v-for="c in chat.conversations"
+                  :key="c.id"
+                  class="p-2.5 sm:p-3 cursor-pointer hover:bg-slate-50 flex items-center gap-2 min-w-0"
+                  :class="{ 'bg-slate-100': chat.currentConversationId === c.id }"
+                  @click="openConversation(c)"
+                >
+                  <div
+                    class="shrink-0 cursor-pointer rounded-full overflow-hidden ring-2 ring-transparent hover:ring-primary/30"
+                    @click.stop="openGallery(c.id)"
+                  >
+                    <Avatar
+                      :image="c.other_user?.avatar_url || undefined"
+                      :label="(c.other_user?.avatar_url ? '' : (c.other_user?.name || '?').charAt(0))"
+                      shape="circle"
+                      size="normal"
+                    />
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="font-medium truncate">{{ c.other_user?.name }}</div>
+                    <div class="text-sm text-slate-500 truncate">
+                      {{ c.last_message?.message || 'Нет сообщений' }}
+                    </div>
+                  </div>
+                  <Button
+                    icon="pi pi-trash"
+                    text
+                    rounded
+                    severity="danger"
+                    class="shrink-0"
+                    aria-label="Удалить диалог"
+                    @click.stop="openConversationDeleteConfirm(c)"
+                  />
+                  <Badge v-if="c.unread_count" :value="c.unread_count" />
+                </div>
+                <div
+                  v-if="!chat.conversations.length && !chat.loading"
+                  class="p-4 text-slate-500 text-sm flex items-center justify-center text-center"
+                >
+                  Нет диалогов
+                </div>
+              </div>
+            </aside>
+            <section
+              class="flex-1 flex flex-col min-w-0 min-h-0 w-full bg-slate-100 rounded-lg shadow-sm overflow-hidden"
+              style="border-radius: 0.75rem;"
+              :class="{ 'hidden md:!flex': mobileView === 'list' }"
+            >
+              <template v-if="chat.currentConversationId">
+                <div class="p-3 border-b bg-white flex items-center gap-2 shrink-0">
+                  <Button
+                    icon="pi pi-arrow-left"
+                    text
+                    rounded
+                    severity="secondary"
+                    class="md:!hidden shrink-0"
+                    aria-label="Назад к диалогам"
+                    @click="mobileView = 'list'"
+                  />
+                  <div
+                    class="shrink-0 cursor-pointer rounded-full overflow-hidden ring-2 ring-transparent hover:ring-primary/30"
+                    @click="openGallery(chat.currentConversationId)"
+                  >
+                    <Avatar
+                      :image="activeOther?.avatar_url || undefined"
+                      :label="(activeOther?.avatar_url ? '' : activeOtherName.charAt(0))"
+                      shape="circle"
+                      size="normal"
+                    />
+                  </div>
+                  <span class="font-medium truncate flex-1 min-w-0">{{ activeOtherName }}</span>
+                </div>
+                <div
+                  ref="scrollRef"
+                  class="flex-1 overflow-y-auto p-3 sm:p-4 flex flex-col gap-2 min-h-0 bg-white"
+                  @scroll.passive="onMessagesScroll"
+                >
+                  <div
+                    v-if="chat.loading && chat.messages.length"
+                    class="text-center text-xs text-slate-400 py-1 shrink-0"
+                  >
+                    Загрузка…
+                  </div>
+                  <div
+                    v-for="m in chat.messages"
+                    :key="m.id"
+                    class="flex w-full"
+                    :class="m.sender?.id === auth.user?.id ? 'justify-end' : 'justify-start'"
+                  >
+                    <div
+                      class="flex items-start gap-1 max-w-[min(100%,85%)] sm:max-w-[min(100%,70%)]"
+                      :class="m.sender?.id === auth.user?.id ? 'flex-row-reverse' : 'flex-row'"
+                    >
+                      <div
+                        class="min-w-0 flex-1 rounded-lg px-3 py-2 break-words"
+                        :class="m.sender?.id === auth.user?.id ? 'bg-primary text-primary-contrast' : 'bg-white border'"
+                      >
+                        <div class="text-sm">{{ m.message }}</div>
+                        <div class="text-xs opacity-70 mt-1">{{ formatTime(m.created_at) }}</div>
+                      </div>
+                      <Button
+                        v-if="m.sender?.id === auth.user?.id"
+                        icon="pi pi-trash"
+                        text
+                        rounded
+                        severity="danger"
+                        class="shrink-0 mt-0.5"
+                        aria-label="Удалить сообщение"
+                        @click.stop="openMessageDeleteConfirm(m)"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div class="px-2 pt-2 pb-0 sm:px-3 sm:pt-3 sm:pb-0 border-t bg-white flex gap-2 shrink-0">
+                  <InputText
+                    v-model="draft"
+                    class="flex-1 min-w-0"
+                    placeholder="Сообщение..."
+                    @keyup.enter="send"
+                  />
+                  <Button icon="pi pi-send" @click="send" :disabled="!draft.trim()" class="shrink-0" />
+                </div>
+              </template>
+              <div
+                v-else
+                class="flex-1 flex items-center justify-center text-slate-500 p-4 text-center text-sm sm:text-base"
+              >
+                Выберите диалог
+              </div>
+            </section>
+
+            <Dialog
+              v-model:visible="deleteConfirmVisible"
+              modal
+              :header="deleteConfirmHeader"
+              :style="{ width: 'min(92vw, 420px)' }"
+              :dismissable-mask="true"
+              @hide="resetDeleteConfirm"
+            >
+              <template #footer>
+                <Button
+                  label="Отмена"
+                  text
+                  severity="secondary"
+                  :disabled="deleteConfirmLoading"
+                  @click="deleteConfirmVisible = false"
+                />
+                <Button
+                  label="Удалить"
+                  severity="danger"
+                  :loading="deleteConfirmLoading"
+                  @click="executeDelete"
+                />
+              </template>
+            </Dialog>
+
+            <Dialog
+              v-model:visible="errorDialogVisible"
+              modal
+              header="Ошибка"
+              :style="{ width: 'min(92vw, 420px)' }"
+              :dismissable-mask="true"
+            >
+              <p class="text-slate-600 text-sm m-0">{{ errorDialogText }}</p>
+              <template #footer>
+                <Button label="Понятно" @click="errorDialogVisible = false" />
+              </template>
+            </Dialog>
+
+            <Dialog
+              v-model:visible="galleryVisible"
+              modal
+              :header="galleryTitle"
+              :style="{ width: '95vw', maxWidth: '600px' }"
+              :dismissable-mask="true"
+              @hide="galleryPhotos = []"
+            >
+              <div v-if="!galleryPhotos.length" class="py-8 text-center text-slate-500">
+                У пользователя пока нет фото
+              </div>
+              <div v-else class="flex flex-col items-center gap-4">
+                <div class="relative w-full flex items-center justify-center bg-slate-100 rounded-lg min-h-[300px]">
+                  <img
+                    :src="galleryPhotos[galleryIndex]?.url"
+                    alt=""
+                    class="max-w-full max-h-[70vh] object-contain"
+                  />
+                </div>
+                <div class="flex items-center gap-4">
+                  <Button
+                    icon="pi pi-chevron-left"
+                    rounded
+                    text
+                    :disabled="galleryIndex <= 0"
+                    @click="galleryIndex = Math.max(0, galleryIndex - 1)"
+                  />
+                  <span class="text-sm text-slate-600">{{ galleryIndex + 1 }} / {{ galleryPhotos.length }}</span>
+                  <Button
+                    icon="pi pi-chevron-right"
+                    rounded
+                    text
+                    :disabled="galleryIndex >= galleryPhotos.length - 1"
+                    @click="galleryIndex = Math.min(galleryPhotos.length - 1, galleryIndex + 1)"
+                  />
+                </div>
+              </div>
+            </Dialog>
+          </div>
+        </template>
+      </Card>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import Button from 'primevue/button'
+import InputText from 'primevue/inputtext'
+import Avatar from 'primevue/avatar'
+import Badge from 'primevue/badge'
+import Dialog from 'primevue/dialog'
+import Card from 'primevue/card'
+import { useRouter } from 'vue-router'
+import { useChatStore } from '@/stores/chat'
+import { useAuthStore } from '@/stores/auth'
+import api from '@/api/axios'
+import { ensureEchoInitialized } from '@/echo'
+
+const router = useRouter()
+
+const chat = useChatStore()
+const auth = useAuthStore()
+const draft = ref('')
+const scrollRef = ref(null)
+const echoChannels = ref({})
+const galleryVisible = ref(false)
+const galleryPhotos = ref([])
+const galleryIndex = ref(0)
+const galleryUserName = ref('')
+const mobileView = ref('list')
+
+const deleteConfirmVisible = ref(false)
+const deleteConfirmLoading = ref(false)
+/** @type {import('vue').Ref<{ type: 'message' | 'conversation', message?: object, conversation?: object } | null>} */
+const deleteConfirmContext = ref(null)
+
+const errorDialogVisible = ref(false)
+const errorDialogText = ref('')
+
+const activeOther = computed(() => {
+  const c = chat.conversations.find((x) => x.id === chat.currentConversationId)
+  return c?.other_user
+})
+
+const activeOtherName = computed(() => {
+  return activeOther.value?.name || 'Чат'
+})
+
+const galleryTitle = computed(() => {
+  return galleryUserName.value ? `Фото: ${galleryUserName.value}` : 'Галерея'
+})
+
+const deleteConfirmHeader = computed(() => {
+  const ctx = deleteConfirmContext.value
+  if (!ctx) return ''
+  return ctx.type === 'conversation' ? 'Удалить диалог?' : 'Удалить сообщение?'
+})
+
+function formatTime(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+}
+
+function handleNewMessage(msg) {
+  const conversationId = msg.conversation_id
+  const isCurrentConversation = conversationId === chat.currentConversationId
+  const myId = auth.user?.id
+  const senderId = msg.sender?.id
+  const isFromOther =
+    myId != null &&
+    senderId != null &&
+    Number(senderId) !== Number(myId)
+
+  chat.updateConversationPreview(conversationId, msg)
+
+  if (isCurrentConversation) {
+    const exists = chat.messages.some((m) => m.id === msg.id)
+    if (!exists) chat.messages.push(msg)
+    nextTick(scrollBottom)
+  } else if (isFromOther) {
+    chat.incrementConversationUnread(conversationId)
+  }
+}
+
+function setupConversationChannels() {
+  // После logout Echo может быть отключен и window.Echo удаляется.
+  // Чтобы не падать при размонтировании компонента, проверяем наличие Echo.
+  if (!window.Echo) return
+
+  const ids = (chat.conversations || []).map((c) => c.id)
+  const current = Object.keys(echoChannels.value)
+
+  current.forEach((id) => {
+    if (!ids.includes(Number(id))) {
+      window.Echo.leave(`conversation.${id}`)
+      delete echoChannels.value[id]
+    }
+  })
+
+  ids.forEach((id) => {
+    if (echoChannels.value[id]) return
+    const ch = window.Echo.private(`conversation.${id}`)
+    ch.listen('.message.sent', (e) => handleNewMessage(e.message))
+    echoChannels.value[id] = ch
+  })
+}
+
+async function openConversation(c) {
+  await chat.loadMessages(c.id)
+  chat.clearConversationUnread(c.id)
+  mobileView.value = 'chat'
+  nextTick(scrollBottom)
+}
+
+async function openGallery(conversationId) {
+  if (!conversationId) return
+  const conv = chat.conversations.find((x) => x.id === conversationId)
+  galleryUserName.value = conv?.other_user?.name || 'Пользователь'
+  try {
+    const { data } = await api.get(`/conversations/${conversationId}/other-user-photos`)
+    galleryPhotos.value = data.data || []
+    galleryIndex.value = 0
+  } catch {
+    galleryPhotos.value = []
+  }
+  galleryVisible.value = true
+}
+
+function scrollBottom() {
+  const el = scrollRef.value
+  if (el) el.scrollTop = el.scrollHeight
+}
+
+function resolveErrorMessage(error, fallback) {
+  return error?.response?.data?.message || fallback
+}
+
+function resetDeleteConfirm() {
+  deleteConfirmLoading.value = false
+  deleteConfirmContext.value = null
+}
+
+function openMessageDeleteConfirm(message) {
+  if (!message?.id) return
+  deleteConfirmContext.value = { type: 'message', message }
+  deleteConfirmVisible.value = true
+}
+
+function openConversationDeleteConfirm(conversation) {
+  if (!conversation?.id) return
+  deleteConfirmContext.value = { type: 'conversation', conversation }
+  deleteConfirmVisible.value = true
+}
+
+async function executeDelete() {
+  const ctx = deleteConfirmContext.value
+  if (!ctx) return
+  deleteConfirmLoading.value = true
+  try {
+    if (ctx.type === 'message') {
+      await chat.deleteMessage(ctx.message.id)
+    } else {
+      await chat.deleteConversation(ctx.conversation.id)
+      mobileView.value = 'list'
+    }
+    deleteConfirmVisible.value = false
+  } catch (error) {
+    deleteConfirmVisible.value = false
+    errorDialogText.value = resolveErrorMessage(
+      error,
+      ctx.type === 'message' ? 'Не удалось удалить сообщение' : 'Не удалось удалить диалог'
+    )
+    errorDialogVisible.value = true
+  } finally {
+    deleteConfirmLoading.value = false
+  }
+}
+
+async function onMessagesScroll() {
+  const el = scrollRef.value
+  if (!el || !chat.currentConversationId) return
+  // При коротком списке scrollTop всегда 0 — иначе срабатывала бы подгрузка без прокрутки.
+  if (el.scrollHeight <= el.clientHeight) return
+  if (el.scrollTop > 120) return
+  if (!chat.nextCursor || chat.loading) return
+
+  const cursor = chat.nextCursor
+  const prevScrollHeight = el.scrollHeight
+  const prevScrollTop = el.scrollTop
+
+  await chat.loadMessages(chat.currentConversationId, cursor)
+
+  await nextTick()
+  if (scrollRef.value) {
+    const nextEl = scrollRef.value
+    nextEl.scrollTop = prevScrollTop + (nextEl.scrollHeight - prevScrollHeight)
+  }
+}
+
+async function send() {
+  const t = draft.value.trim()
+  if (!t) return
+  draft.value = ''
+  await chat.sendMessage(t)
+  nextTick(scrollBottom)
+}
+
+async function logout() {
+  await auth.logout()
+  router.push('/')
+}
+
+watch(
+  () => chat.conversations,
+  () => setupConversationChannels(),
+  { immediate: true }
+)
+
+onMounted(async () => {
+  ensureEchoInitialized()
+  await chat.loadConversations()
+})
+
+onUnmounted(() => {
+  if (window.Echo?.leave) {
+    Object.keys(echoChannels.value).forEach((id) => {
+      window.Echo.leave(`conversation.${id}`)
+    })
+  }
+  echoChannels.value = {}
+})
+</script>
+
+<style scoped>
+.chat-card :deep(.p-card) {
+  border-radius: 0;
+  overflow: hidden;
+  background: transparent;
+  box-shadow: none;
+}
+</style>

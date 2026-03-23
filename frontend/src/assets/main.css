@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Типовая полная высота: шапка фикс, main и контент по 100vh - шапка */
+#app.app-layout {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+#app.app-layout .app-main {
+  flex: 0 0 auto;
+  height: calc(100vh - var(--app-header-h, 3.5rem));
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#app.app-layout .app-main .app-main__inner {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+#app.app-layout .app-main .app-main__inner--no-scroll {
+  overflow: hidden;
+}
+#app.app-layout .app-main .app-main__inner--scroll {
+  overflow-y: auto;
+}
+/* Страница чата — высота явно от viewport, без цепочки 100% */
+.view-fill-viewport {
+  height: calc(100vh - var(--app-header-h, 3.5rem));
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.view-fill-viewport .view-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Primary color: #2285e0 (app-wide) */
+:root {
+  --p-primary-50: #e8f2fd;
+  --p-primary-100: #d1e5fb;
+  --p-primary-200: #a3cbf7;
+  --p-primary-300: #75b1f3;
+  --p-primary-400: #4797ef;
+  --p-primary-500: #2285e0;
+  --p-primary-600: #1c6bb4;
+  --p-primary-700: #165187;
+  --p-primary-800: #10385b;
+  --p-primary-900: #0a202e;
+  --p-primary-950: #051017;
+}
+
+/* PrimeVue Password: input same width as InputText (root gets w-full, inner input must fill) */
+.p-password,
+[data-pc-name="password"] {
+  width: 100%;
+  display: flex;
+}
+.p-password input,
+[data-pc-name="password"] input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Красная рамка для невалидных полей во всех формах */
+.p-inputtext.p-invalid,
+.p-inputtext[aria-invalid="true"] {
+  border-color: #e24c4c;
+}
+.p-password.p-invalid .p-inputtext,
+.p-password.p-invalid input,
+.p-password input[aria-invalid="true"] {
+  border-color: #e24c4c;
+}
+
+/* Невалидное поле: красная рамка при hover и focus, толщина не меняется */
+.p-inputtext.p-invalid:hover,
+.p-inputtext.p-invalid:focus,
+.p-inputtext.p-invalid:focus-visible,
+.p-inputtext[aria-invalid="true"]:hover,
+.p-inputtext[aria-invalid="true"]:focus,
+.p-inputtext[aria-invalid="true"]:focus-visible {
+  border-color: #e24c4c !important;
+  border-width: 1px !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+.p-password.p-invalid .p-inputtext:hover,
+.p-password.p-invalid .p-inputtext:focus,
+.p-password.p-invalid .p-inputtext:focus-visible,
+.p-password.p-invalid input:hover,
+.p-password.p-invalid input:focus,
+.p-password.p-invalid input:focus-visible,
+.p-password input[aria-invalid="true"]:hover,
+.p-password input[aria-invalid="true"]:focus,
+.p-password input[aria-invalid="true"]:focus-visible {
+  border-color: #e24c4c !important;
+  border-width: 1px !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
