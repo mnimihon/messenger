@@ -8,7 +8,9 @@ interface PhotoService
 {
     public const MAX_PHOTOS = 10;
 
-    public const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024;
+    public const TARGET_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+
+    public const MAX_UPLOAD_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
     public function listPhotosForUser(int $userID): array;
     public function toArray(UserPhoto $photo): array;

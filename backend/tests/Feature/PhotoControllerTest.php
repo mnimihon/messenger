@@ -94,7 +94,7 @@ class PhotoControllerTest extends TestCase
 
         $files = [];
         for ($i = 0; $i < 11; $i++) {
-            $files[] = UploadedFile::fake()->create('photo' . $i . '.jpg', 100, 'image/jpeg');
+            $files[] = UploadedFile::fake()->image('photo' . $i . '.jpg');
         }
 
         $response = $this->post('/api/photos', [
@@ -113,7 +113,7 @@ class PhotoControllerTest extends TestCase
         $user = User::factory()->create();
         Sanctum::actingAs($user, ['*']);
 
-        $file = UploadedFile::fake()->create('photo.jpg', 100, 'image/jpeg');
+        $file = UploadedFile::fake()->image('photo.jpg');
 
         $response = $this->post('/api/photos', [
             'photos' => [$file],
@@ -139,6 +139,44 @@ class PhotoControllerTest extends TestCase
         $this->assertDatabaseHas('user_photos', [
             'user_id' => $user->id,
         ]);
+    }
+
+    public function test_store_returns_422_when_photo_is_bigger_than_10mb(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user, ['*']);
+
+        $file = UploadedFile::fake()->create('huge.jpg', 10241, 'image/jpeg');
+
+        $response = $this->post('/api/photos', [
+            'photos' => [$file],
+        ], [
+            'Accept' => 'application/json',
+        ]);
+
+        $response
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['photos.0']);
+    }
+
+    public function test_store_converts_png_to_jpeg_before_saving(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user, ['*']);
+
+        $file = UploadedFile::fake()->image('photo.png');
+
+        $response = $this->post('/api/photos', [
+            'photos' => [$file],
+        ], [
+            'Accept' => 'application/json',
+        ]);
+
+        $response->assertStatus(201);
+
+        $photo = UserPhoto::query()->where('user_id', $user->id)->latest('id')->firstOrFail();
+        $this->assertStringEndsWith('.jpg', $photo->path);
+        Storage::disk('public')->assertExists($photo->path);
     }
 
     /*

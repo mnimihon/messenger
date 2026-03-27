@@ -11,7 +11,7 @@ class StorePhotosRequest extends FormRequest
     {
         return [
             'photos' => 'required|array|min:1|max:' . PhotoService::MAX_PHOTOS,
-            'photos.*' => 'required|file|mimes:jpeg,png,jpg|max:' . (PhotoService::MAX_FILE_SIZE_BYTES / 1024),
+            'photos.*' => 'required|file|image|max:' . (PhotoService::MAX_UPLOAD_FILE_SIZE_BYTES / 1024),
         ];
     }
 
@@ -21,8 +21,8 @@ class StorePhotosRequest extends FormRequest
             'photos.required' => 'Не выбрано ни одного фото',
             'photos.min' => 'Нужно выбрать хотя бы одно фото',
             'photos.max' => 'Максимум 10 фото за раз',
-            'photos.*.mimes' => 'Допустимые форматы: jpeg, png, jpg',
-            'photos.*.max' => 'Максимальный размер файла: ' . (PhotoService::MAX_FILE_SIZE_BYTES / 1024 / 1024) . 'MB',
+            'photos.*.image' => 'Разрешены только изображения',
+            'photos.*.max' => 'Файл не должен быть больше ' . (PhotoService::MAX_UPLOAD_FILE_SIZE_BYTES / 1024 / 1024) . 'MB',
         ];
     }
 }
