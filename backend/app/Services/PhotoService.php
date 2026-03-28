@@ -6,9 +6,9 @@ use Illuminate\Http\UploadedFile;
 
 interface PhotoService
 {
-    public const MAX_PHOTOS = 10;
+    public const MAX_PHOTOS = 5;
 
-    public const TARGET_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+    public const TARGET_FILE_SIZE_BYTES = 3 * 1024 * 1024;
 
     public const MAX_UPLOAD_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 

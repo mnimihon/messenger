@@ -93,7 +93,7 @@ class PhotoControllerTest extends TestCase
         Sanctum::actingAs($user, ['*']);
 
         $files = [];
-        for ($i = 0; $i < 11; $i++) {
+        for ($i = 0; $i < 6; $i++) {
             $files[] = UploadedFile::fake()->image('photo' . $i . '.jpg');
         }
 

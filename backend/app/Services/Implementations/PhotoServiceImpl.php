@@ -66,10 +66,6 @@ class PhotoServiceImpl implements PhotoService
 
     private function normalizeToJpeg(UploadedFile $file): string
     {
-        if (! function_exists('imagecreatefromstring') || ! function_exists('imagejpeg')) {
-            throw new RuntimeException('На сервере недоступна библиотека GD для обработки изображений');
-        }
-
         $rawContent = file_get_contents($file->getRealPath());
         if ($rawContent === false || $rawContent === '') {
             throw new RuntimeException('Не удалось прочитать файл');
@@ -82,11 +78,10 @@ class PhotoServiceImpl implements PhotoService
 
         $image = imagecreatefromstring($rawContent);
         if ($image === false) {
-            throw new RuntimeException('Не удалось декодировать изображение');
+            throw new RuntimeException('Не удалось загрузить изображение');
         }
 
         try {
-            // Re-encode strips metadata and rebuilds bytes into a clean JPEG stream.
             $jpegBinary = $this->encodeJpegToTargetSize($image);
         } finally {
             imagedestroy($image);
@@ -110,7 +105,7 @@ class PhotoServiceImpl implements PhotoService
             }
         }
 
-        throw new RuntimeException('Не удалось сжать изображение до 5MB без изменения размеров');
+        throw new RuntimeException('Не удалось загрузить изображение');
     }
 
     private function encodeJpeg(\GdImage $image, int $quality): string
@@ -119,8 +114,8 @@ class PhotoServiceImpl implements PhotoService
         $encoded = imagejpeg($image, null, $quality);
         $binary = ob_get_clean();
 
-        if ($encoded !== true || ! is_string($binary)) {
-            throw new RuntimeException('Не удалось перекодировать изображение в JPEG');
+        if ($encoded !== true || !is_string($binary)) {
+            throw new RuntimeException('Не удалось загрузить изображение');
         }
 
         return $binary;

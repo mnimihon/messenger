@@ -3,7 +3,7 @@
     <div class="max-w-2xl mx-auto w-full">
       <Card class="photos-card">
         <template #title><span class="block text-center">Фотографии профиля</span></template>
-        <template #subtitle><span class="block text-center">Загрузите фотографии (не более 10)</span></template>
+        <template #subtitle><span class="block text-center">Загрузите фотографии (не более 5)</span></template>
         <template #content>
           <div class="flex flex-wrap gap-3 sm:gap-4 mb-4">
             <div
@@ -42,7 +42,9 @@
               <FileUpload
                 mode="basic"
                 accept="image/jpeg,image/png,image/jpg"
-                :max-file-size="2000000"
+                :max-file-size="MAX_UPLOAD_FILE_SIZE_BYTES"
+                :invalid-file-size-message="FILE_UPLOAD_MSG_INVALID_SIZE"
+                :invalid-file-type-message="FILE_UPLOAD_MSG_INVALID_TYPE"
                 :auto="false"
                 :multiple="true"
                 choose-label="Загрузить фото"
@@ -68,6 +70,16 @@ import Message from 'primevue/message'
 import Badge from 'primevue/badge'
 import api from '@/api/axios'
 
+const MAX_PHOTOS = 5
+/** Совпадает с PhotoService::MAX_UPLOAD_FILE_SIZE_BYTES в backend (10MB). */
+const MAX_UPLOAD_FILE_SIZE_BYTES = 10 * 1024 * 1024
+
+/** Placeholders {0} = имя файла, {1} = размер лимита (как форматирует PrimeVue). */
+const FILE_UPLOAD_MSG_INVALID_SIZE =
+  '{0}: слишком большой файл. Максимальный размер — {1}.'
+const FILE_UPLOAD_MSG_INVALID_TYPE =
+  '{0}: неверный тип файла. Разрешены только изображения JPEG и PNG ({1}).'
+
 const router = useRouter()
 const photos = ref([])
 const msg = ref('')
@@ -85,7 +97,7 @@ async function onSelect(event) {
   if (!files?.length) return
   msg.value = ''
   const form = new FormData()
-  const limit = Math.min(files.length, 10)
+  const limit = Math.min(files.length, MAX_PHOTOS)
   for (let i = 0; i < limit; i++) {
     form.append('photos[]', files[i])
   }

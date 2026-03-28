@@ -20,7 +20,7 @@ class StorePhotosRequest extends FormRequest
         return [
             'photos.required' => 'Не выбрано ни одного фото',
             'photos.min' => 'Нужно выбрать хотя бы одно фото',
-            'photos.max' => 'Максимум 10 фото за раз',
+            'photos.max' => 'Максимум ' . PhotoService::MAX_PHOTOS . ' фото за раз',
             'photos.*.image' => 'Разрешены только изображения',
             'photos.*.max' => 'Файл не должен быть больше ' . (PhotoService::MAX_UPLOAD_FILE_SIZE_BYTES / 1024 / 1024) . 'MB',
         ];
