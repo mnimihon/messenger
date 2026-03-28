@@ -5,54 +5,58 @@
         <template #title><span class="block text-center">Фотографии профиля</span></template>
         <template #subtitle><span class="block text-center">Загрузите фотографии (не более 5)</span></template>
         <template #content>
-          <div class="flex flex-wrap gap-3 sm:gap-4 mb-4">
-            <div
-              v-for="p in photos"
-              :key="p.id"
-              class="relative w-20 h-20 sm:w-28 sm:h-28 rounded-lg overflow-hidden border bg-slate-100 flex flex-col shrink-0"
-            >
-              <img :src="p.url" alt="" class="w-full h-14 sm:h-20 object-cover" />
-              <div class="flex-1 flex items-center justify-center gap-1 p-0.5 sm:p-1 bg-white min-h-0">
-                <Button
-                  :icon="p.is_main ? 'pi pi-star-fill' : 'pi pi-star'"
-                  size="small"
-                  text
-                  rounded
-                  :class="p.is_main ? 'text-primary' : 'text-slate-400 hover:text-primary'"
-                  :title="p.is_main ? 'Главное фото' : 'Сделать главным'"
-                  @click="setMain(p.id)"
-                />
-                <Button
-                  icon="pi pi-times"
-                  size="small"
-                  text
-                  rounded
-                  class="text-red-500 hover:text-red-600"
-                  title="Удалить"
-                  @click="removePhoto(p.id)"
-                />
+          <div class="w-full min-w-0 flex flex-col">
+            <div class="flex flex-wrap gap-3 sm:gap-4 mb-4">
+              <div
+                v-for="p in photos"
+                :key="p.id"
+                class="relative w-20 h-20 sm:w-28 sm:h-28 rounded-lg overflow-hidden border bg-slate-100 flex flex-col shrink-0"
+              >
+                <img :src="p.url" alt="" class="w-full h-14 sm:h-20 object-cover" />
+                <div class="flex-1 flex items-center justify-center gap-1 p-0.5 sm:p-1 bg-white min-h-0">
+                  <Button
+                    :icon="p.is_main ? 'pi pi-star-fill' : 'pi pi-star'"
+                    size="small"
+                    text
+                    rounded
+                    :class="p.is_main ? 'text-primary' : 'text-slate-400 hover:text-primary'"
+                    :title="p.is_main ? 'Главное фото' : 'Сделать главным'"
+                    @click="setMain(p.id)"
+                  />
+                  <Button
+                    icon="pi pi-times"
+                    size="small"
+                    text
+                    rounded
+                    class="text-red-500 hover:text-red-600"
+                    title="Удалить"
+                    @click="removePhoto(p.id)"
+                  />
+                </div>
               </div>
             </div>
-          </div>
-          <Message v-if="msg && !msgOk" severity="error" class="mt-4" :closable="false">
-            {{ msg }}
-          </Message>
-          <div class="flex flex-wrap items-center gap-2 mt-6">
-            <div class="file-upload-wrap">
-              <FileUpload
-                mode="basic"
-                accept="image/jpeg,image/png,image/jpg"
-                :max-file-size="MAX_UPLOAD_FILE_SIZE_BYTES"
-                :invalid-file-size-message="FILE_UPLOAD_MSG_INVALID_SIZE"
-                :invalid-file-type-message="FILE_UPLOAD_MSG_INVALID_TYPE"
-                :auto="false"
-                :multiple="true"
-                choose-label="Загрузить фото"
-                :choose-icon="null"
-                @select="onSelect"
-              />
+            <Message v-if="msg && !msgOk" severity="error" class="mt-4" :closable="false">
+              {{ msg }}
+            </Message>
+            <div
+              class="photos-actions mt-6 grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2"
+            >
+              <div class="file-upload-wrap min-w-0">
+                <FileUpload
+                  mode="basic"
+                  accept="image/jpeg,image/png,image/jpg"
+                  :max-file-size="MAX_UPLOAD_FILE_SIZE_BYTES"
+                  :invalid-file-size-message="FILE_UPLOAD_MSG_INVALID_SIZE"
+                  :invalid-file-type-message="FILE_UPLOAD_MSG_INVALID_TYPE"
+                  :auto="false"
+                  :multiple="true"
+                  choose-label="Загрузить фото"
+                  :choose-icon="null"
+                  @select="onSelect"
+                />
+              </div>
+              <Button label="В чат" @click="goChat" />
             </div>
-            <Button label="В чат" @click="goChat" class="ml-auto" />
           </div>
         </template>
       </Card>
@@ -152,6 +156,21 @@ function goChat() {
 .photos-card :deep(.p-card-subtitle) {
   text-align: center;
   width: 100%;
+}
+/* Basic FileUpload: внутренний p-message иначе сидит в одной колонке с кнопкой выбора — поднимаем в grid */
+.photos-actions .file-upload-wrap,
+.photos-actions .file-upload-wrap :deep(.p-fileupload) {
+  display: contents;
+}
+.photos-actions .file-upload-wrap :deep(.p-message) {
+  grid-column: 1 / -1;
+}
+.photos-actions .file-upload-wrap :deep(.p-fileupload-basic-content) {
+  grid-column: 1;
+  min-width: 0;
+}
+.photos-actions > .p-button {
+  grid-column: 2;
 }
 /* Скрыть только надпись "No file chosen", кнопка остаётся */
 .file-upload-wrap :deep(.p-fileupload-content) {
